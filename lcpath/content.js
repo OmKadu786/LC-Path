@@ -123,6 +123,11 @@ function getCurrentCode() {
 
 // ─── 4. FETCH FULL USER STATS VIA LEETCODE GRAPHQL API ───
 
+function getCSRFToken() {
+  const match = document.cookie.match(/csrftoken=([^;]+)/);
+  return match ? match[1] : '';
+}
+
 async function fetchUserStats(username) {
   const query = `
     query userProfile($username: String!) {
@@ -149,7 +154,10 @@ async function fetchUserStats(username) {
   try {
     const res = await fetch('https://leetcode.com/graphql', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'x-csrftoken': getCSRFToken()
+      },
       body: JSON.stringify({
         query,
         variables: { username }
