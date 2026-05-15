@@ -2,6 +2,9 @@
 
 let userData = null;
 
+// ─── INIT: CLEAR OLD CACHE FORMATS ───
+chrome.storage.local.remove(['lcpath_solved_cache']);
+
 // ─── SETUP SCREEN ───
 
 async function checkSetup() {
@@ -200,8 +203,9 @@ function renderRecommendations(recs) {
 async function renderHome(data) {
   if (!data || !data.userStats || !data.userStats.stats) {
     const container = document.getElementById('recommendations');
+    const errMsg = data?.userStats?.error ? data.userStats.error : "Data format error or LeetCode username not found. Please double check your username and refresh the LeetCode page.";
     if (container) {
-      container.innerHTML = '<div class="error">Data format error or LeetCode username not found. Please double check your username and refresh the LeetCode page.</div>';
+      container.innerHTML = `<div class="error">${errMsg}</div>`;
     }
     document.getElementById('topic-bars').innerHTML = '<div class="error">Failed to load topic stats.</div>';
     return;

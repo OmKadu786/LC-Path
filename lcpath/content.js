@@ -152,7 +152,7 @@ async function fetchUserStats(username) {
   `;
 
   try {
-    const res = await fetch('https://leetcode.com/graphql', {
+    const res = await fetch('/graphql', {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
@@ -166,11 +166,15 @@ async function fetchUserStats(username) {
 
     const data = await res.json();
     
+    if (data.errors) {
+      return { error: 'GraphQL Error: ' + JSON.stringify(data.errors) };
+    }
+    
     // Format the response into a clean object
     const matchedUser = data?.data?.matchedUser;
     const recent = data?.data?.recentAcSubmissionList || [];
     
-    if (!matchedUser) return null;
+    if (!matchedUser) return { error: 'Username not found on LeetCode' };
 
     // Flatten tags
     const tags = [
@@ -193,7 +197,7 @@ async function fetchUserStats(username) {
 
   } catch (e) {
     console.error('LCPath: GraphQL fetch failed', e);
-    return null;
+    return { error: e.toString() };
   }
 }
 
