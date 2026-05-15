@@ -94,10 +94,16 @@ async function loadCachedData() {
     renderHome(userData);
   }
 
-  // If no data loaded after 3 seconds, show the error/retry screen
+  // If no data loaded after 2 seconds, auto-retry silently, but show the fallback UI just in case
   if (!dataLoaded) {
     setTimeout(() => {
-      if (!userData) renderHome(null);
+      if (!userData) {
+        // Auto-retry fetch
+        chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+          if (tabs[0]) chrome.tabs.sendMessage(tabs[0].id, { type: 'REFETCH_DATA' });
+        });
+        renderHome(null);
+      }
     }, 2000);
   }
 }
