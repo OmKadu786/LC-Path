@@ -77,7 +77,10 @@ async function loadCachedData() {
   // Try local cache
   const stored = await chrome.storage.local.get(['lcpath_user_stats', 'username']);
   
+  let dataLoaded = false;
+
   if (stored.lcpath_user_stats) {
+    dataLoaded = true;
     userData = {
       userStats: stored.lcpath_user_stats,
       currentProblem: sessionData?.currentProblem || { title: null, tags: [], difficulty: 'Unknown' },
@@ -86,8 +89,16 @@ async function loadCachedData() {
     };
     renderHome(userData);
   } else if (sessionData && sessionData.userStats) {
+    dataLoaded = true;
     userData = sessionData;
     renderHome(userData);
+  }
+
+  // If no data loaded after 3 seconds, show the error/retry screen
+  if (!dataLoaded) {
+    setTimeout(() => {
+      if (!userData) renderHome(null);
+    }, 2000);
   }
 }
 
