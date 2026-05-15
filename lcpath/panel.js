@@ -221,7 +221,8 @@ function renderRecommendations(recs) {
 async function renderHome(data) {
   if (!data || !data.userStats || !data.userStats.stats) {
     const container = document.getElementById('recommendations');
-    const errMsg = data?.userStats?.error ? data.userStats.error : "Data format error or LeetCode username not found.";
+    const debugStr = data ? JSON.stringify(data).substring(0, 150) : "data is null";
+    const errMsg = data?.userStats?.error ? data.userStats.error : "Missing stats. Debug: " + debugStr;
     if (container) {
       container.innerHTML = `
         <div class="error" style="margin-bottom:10px;">${errMsg}</div>
