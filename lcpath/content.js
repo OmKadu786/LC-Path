@@ -268,3 +268,13 @@ const observer = new MutationObserver(() => {
   }
 });
 observer.observe(document.body, { childList: true, subtree: true });
+
+// Listen for manual refetch from panel
+chrome.runtime.onMessage.addListener((msg) => {
+  if (msg.type === 'REFETCH_DATA') {
+    // Clear old data and try again
+    chrome.storage.local.remove([CACHE_KEY, 'lcpath_cache_time'], () => {
+      main();
+    });
+  }
+});

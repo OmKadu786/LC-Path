@@ -48,6 +48,7 @@ document.getElementById('settings-btn').addEventListener('click', () => {
 chrome.runtime.onMessage.addListener((msg) => {
   if (msg.type === 'LCPATH_DATA') {
     if (!userData) {
+      if (msg.payload.userStats === undefined) return; // Ignore partial SPA updates if not initialized
       userData = msg.payload;
     } else {
       if (msg.payload.userStats) userData.userStats = msg.payload.userStats;
@@ -203,9 +204,18 @@ function renderRecommendations(recs) {
 async function renderHome(data) {
   if (!data || !data.userStats || !data.userStats.stats) {
     const container = document.getElementById('recommendations');
-    const errMsg = data?.userStats?.error ? data.userStats.error : "Data format error or LeetCode username not found. Please double check your username and refresh the LeetCode page.";
+    const errMsg = data?.userStats?.error ? data.userStats.error : "Data format error or LeetCode username not found.";
     if (container) {
-      container.innerHTML = `<div class="error">${errMsg}</div>`;
+      container.innerHTML = `
+        <div class="error" style="margin-bottom:10px;">${errMsg}</div>
+        <button id="retry-btn" class="btn-primary" style="width:100%">Retry Fetching Data</button>
+      `;
+      document.getElementById('retry-btn').addEventListener('click', () => {
+        document.getElementById('retry-btn').textContent = 'Retrying...';
+        chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+          if (tabs[0]) chrome.tabs.sendMessage(tabs[0].id, { type: 'REFETCH_DATA' });
+        });
+      });
     }
     document.getElementById('topic-bars').innerHTML = '<div class="error">Failed to load topic stats.</div>';
     return;
