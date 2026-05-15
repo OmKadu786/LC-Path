@@ -141,11 +141,13 @@ function renderTopicBars(tags) {
 
 async function fetchRecommendations(userStats, currentProblem) {
   const topTags = userStats.tags.slice(0, 5).map(t => t.tagName).join(', ');
-  const recent = userStats.recent.slice(0, 10).join(', ');
+  const recent = userStats.recent.slice(0, 15).join(', ');
   const prompt = `You are a LeetCode study coach. The user has solved ${userStats.stats.all} problems in their lifetime.
 Their strongest topics are: ${topTags}.
-They recently solved: ${recent}.
+We only know their most recent 20 solved problems: ${recent}.
 They are currently looking at: ${currentProblem?.title || 'unknown'} (${currentProblem?.tags?.join(', ') || 'no tags'}).
+
+CRITICAL INSTRUCTION: Since you only see the last 20 problems, assume they have ALREADY solved the most common/basic problems (like "Two Sum", "Reverse Linked List", etc.) if their total solved count is > 10. Do not recommend those.
 
 Return exactly 3 next problem recommendations as JSON (no markdown fences, just the JSON array):
 [

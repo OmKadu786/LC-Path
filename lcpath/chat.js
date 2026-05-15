@@ -49,12 +49,14 @@ function buildSystemPrompt(userStats, currentProblem, currentCode) {
     : '';
 
   return `You are LCPath, a personalized LeetCode study coach.
-You know the user's entire LeetCode history.
+You know the user's entire LeetCode history stats, but only the titles of their last 20 solved problems.
 
 LIFETIME STATS:
 Total Solved: ${stats.all} (Easy: ${stats.easy}, Medium: ${stats.medium}, Hard: ${stats.hard})
 Top Topics: ${topTags}
-Recently Solved: ${recentStr}
+Recently Solved (last 20 max): ${recentStr}
+
+CRITICAL: Because you only see the last 20 problems, assume they have ALREADY solved the most common beginner problems (like "Two Sum") if they have more than 10 problems solved total.
 
 ${current}${codeContext}
 
