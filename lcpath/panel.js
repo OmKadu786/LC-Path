@@ -44,18 +44,15 @@ document.getElementById('settings-btn').addEventListener('click', () => {
 
 chrome.runtime.onMessage.addListener((msg) => {
   if (msg.type === 'LCPATH_DATA') {
-    if (msg.payload.userStats) {
+    if (!userData) {
       userData = msg.payload;
-    } else if (msg.payload.currentProblem) {
-      // Partial update (SPA navigation)
-      if (userData) {
-        userData.currentProblem = msg.payload.currentProblem;
-        userData.currentCode = msg.payload.currentCode;
-      }
+    } else {
+      if (msg.payload.userStats) userData.userStats = msg.payload.userStats;
+      if (msg.payload.currentProblem) userData.currentProblem = msg.payload.currentProblem;
+      if (msg.payload.currentCode !== undefined) userData.currentCode = msg.payload.currentCode;
+      if (msg.payload.username) userData.username = msg.payload.username;
     }
-    if (userData) {
-      renderHome(userData);
-    }
+    renderHome(userData);
   }
 });
 
@@ -200,8 +197,17 @@ function renderRecommendations(recs) {
   });
 }
 
-async function renderHome({ userStats, currentProblem }) {
-  if (!userStats) return;
+async function renderHome(data) {
+  if (!data || !data.userStats || !data.userStats.stats) {
+    const container = document.getElementById('recommendations');
+    if (container) {
+      container.innerHTML = '<div class="error">Data format error or LeetCode username not found. Please double check your username and refresh the LeetCode page.</div>';
+    }
+    document.getElementById('topic-bars').innerHTML = '<div class="error">Failed to load topic stats.</div>';
+    return;
+  }
+  
+  const { userStats, currentProblem } = data;
   renderStats(userStats.stats);
   renderTopicBars(userStats.tags);
 
