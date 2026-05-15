@@ -1,9 +1,6 @@
 # LCPath 
 
-<div align="center">
-  <img src="mockup1.png" alt="LCPath Home Mockup" width="45%" />
-  <img src="mockup2.png" alt="LCPath Chat Mockup" width="45%" />
-</div>
+
 
 ## Overview
 **LCPath** is an AI-powered Chrome extension designed to act as your personalized LeetCode study coach. It injects a side panel into every LeetCode problem page, reading your history and providing actionable recommendations to optimize your interview prep.
@@ -27,9 +24,14 @@ LCPath solves this by automatically scraping your solved problem list from your 
 - **DeepSeek API:** Uses the highly affordable and powerful `deepseek-chat` model to generate recommendations and chat responses.
 
 ## Installation
-1. Clone or download this repository to a folder named `lcpath/`.
-2. Open Chrome and navigate to `chrome://extensions`.
-3. Enable **Developer mode** in the top-right corner.
-4. Click **Load unpacked** and select your `lcpath/` folder.
-5. Go to any LeetCode page, click the LCPath icon, and enter your LeetCode username and DeepSeek API key.
-6. Open the Chrome side panel to start using LCPath!
+1. Clone or download this repository.
+2. **Start the Backend:**
+   - Navigate to the `backend/` folder in your terminal.
+   - Run `npm install`.
+   - Copy `.env.example` to `.env` and add your DeepSeek API key inside it.
+   - Run `npm start` to run the proxy server on `localhost:3000`.
+3. **Load the Extension:**
+   - Open your Chromium browser (Chrome, Brave, Edge) and navigate to `chrome://extensions` (or `brave://extensions`).
+   - Enable **Developer mode** in the top-right corner.
+   - Click **Load unpacked** and select the `lcpath/` folder (the lowercase one).
+4. Go to any LeetCode page, click the new green LCPath button in the top navigation bar, and enter your LeetCode username to get started!
