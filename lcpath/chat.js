@@ -13,8 +13,8 @@ let hintCount = 0;
 // ─── UPDATE CONTEXT PILL ───
 
 function updateContextPill() {
-  if (userData && userData.solved) {
-    contextPill.textContent = `📋 knows your ${userData.solved.length} solved problems`;
+  if (userData && userData.userStats) {
+    contextPill.textContent = `📋 knows your ${userData.userStats.stats.all} solved problems`;
     if (userData.currentCode) {
       contextPill.textContent += ` + your code`;
     }
@@ -32,10 +32,13 @@ const contextInterval = setInterval(() => {
 
 // ─── BUILD SYSTEM PROMPT ───
 
-function buildSystemPrompt(solved, currentProblem, currentCode) {
-  const solvedList = solved
-    .map(p => `${p.title} (${p.difficulty})`)
-    .join('\n');
+function buildSystemPrompt(userStats, currentProblem, currentCode) {
+  const stats = userStats?.stats || { all: 0, easy: 0, medium: 0, hard: 0 };
+  const tags = userStats?.tags || [];
+  const recent = userStats?.recent || [];
+
+  const topTags = tags.slice(0, 10).map(t => `${t.tagName} (${t.problemsSolved})`).join(', ');
+  const recentStr = recent.slice(0, 15).join(', ');
 
   const current = currentProblem?.title
     ? `The user is currently working on: ${currentProblem.title} [${currentProblem.tags?.join(', ') || 'no tags'}]`
@@ -46,10 +49,12 @@ function buildSystemPrompt(solved, currentProblem, currentCode) {
     : '';
 
   return `You are LCPath, a personalized LeetCode study coach.
-You know exactly which problems this user has solved.
+You know the user's entire LeetCode history.
 
-SOLVED PROBLEMS (${solved.length} total):
-${solvedList}
+LIFETIME STATS:
+Total Solved: ${stats.all} (Easy: ${stats.easy}, Medium: ${stats.medium}, Hard: ${stats.hard})
+Top Topics: ${topTags}
+Recently Solved: ${recentStr}
 
 ${current}${codeContext}
 
@@ -77,7 +82,7 @@ async function sendMessage() {
 
   try {
     const systemPrompt = buildSystemPrompt(
-      userData?.solved || [],
+      userData?.userStats,
       userData?.currentProblem,
       userData?.currentCode
     );
@@ -248,7 +253,7 @@ async function requestHint() {
 
   try {
     const systemPrompt = buildSystemPrompt(
-      userData?.solved || [],
+      userData?.userStats,
       userData?.currentProblem,
       userData?.currentCode
     );

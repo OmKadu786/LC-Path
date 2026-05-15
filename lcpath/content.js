@@ -121,13 +121,25 @@ function getCurrentCode() {
 }
 
 
-// ─── 4. FETCH SOLVED PROBLEMS VIA LEETCODE GRAPHQL API ───
+// ─── 4. FETCH FULL USER STATS VIA LEETCODE GRAPHQL API ───
 
-async function fetchSolvedProblems(username) {
-  // Use LeetCode's public GraphQL API — more stable than DOM scraping
+async function fetchUserStats(username) {
   const query = `
-    query recentAcSubmissions($username: String!, $limit: Int!) {
-      recentAcSubmissionList(username: $username, limit: $limit) {
+    query userProfile($username: String!) {
+      matchedUser(username: $username) {
+        submitStats {
+          acSubmissionNum {
+            difficulty
+            count
+          }
+        }
+        tagProblemCounts {
+          advanced { tagName problemsSolved }
+          intermediate { tagName problemsSolved }
+          fundamental { tagName problemsSolved }
+        }
+      }
+      recentAcSubmissionList(username: $username, limit: 15) {
         title
         titleSlug
       }
@@ -140,59 +152,40 @@ async function fetchSolvedProblems(username) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         query,
-        variables: { username, limit: 200 }
+        variables: { username }
       })
     });
 
     const data = await res.json();
-    const submissions = data?.data?.recentAcSubmissionList || [];
+    
+    // Format the response into a clean object
+    const matchedUser = data?.data?.matchedUser;
+    const recent = data?.data?.recentAcSubmissionList || [];
+    
+    if (!matchedUser) return null;
 
-    // Deduplicate by titleSlug
-    const seen = new Set();
-    const problems = [];
-    for (const sub of submissions) {
-      if (!seen.has(sub.titleSlug)) {
-        seen.add(sub.titleSlug);
-        problems.push({
-          title: sub.title,
-          slug: sub.titleSlug,
-          difficulty: 'Unknown' // We'll enrich this later if needed
-        });
-      }
-    }
+    // Flatten tags
+    const tags = [
+      ...(matchedUser.tagProblemCounts.advanced || []),
+      ...(matchedUser.tagProblemCounts.intermediate || []),
+      ...(matchedUser.tagProblemCounts.fundamental || [])
+    ].sort((a, b) => b.problemsSolved - a.problemsSolved);
 
-    return problems;
-  } catch (e) {
-    console.error('LCPath: GraphQL fetch failed, falling back to DOM scrape', e);
-    return fallbackDOMScrape(username);
-  }
-}
-
-// Fallback: fetch profile page and parse DOM
-async function fallbackDOMScrape(username) {
-  try {
-    const url = `https://leetcode.com/u/${username}/`;
-    const res = await fetch(url);
-    const html = await res.text();
-    const doc = new DOMParser().parseFromString(html, 'text/html');
-    const rows = doc.querySelectorAll('.ac-solved-problems tr, table tr');
-    const problems = [];
-
-    rows.forEach(row => {
-      const link = row.querySelector('a');
-      const diffCell = row.querySelector('td:nth-child(2)');
-      if (!link) return;
-      problems.push({
-        title: link.textContent.trim(),
-        slug: link.href?.split('/problems/')?.[1]?.replace('/', '') || '',
-        difficulty: diffCell?.textContent?.trim() || 'Unknown'
-      });
+    // Get difficulty counts
+    const stats = {};
+    matchedUser.submitStats.acSubmissionNum.forEach(s => {
+      stats[s.difficulty.toLowerCase()] = s.count;
     });
 
-    return problems;
+    return {
+      stats: stats, // { all: 100, easy: 30, medium: 50, hard: 20 }
+      tags: tags.slice(0, 15), // top 15 tags
+      recent: recent.map(r => r.title)
+    };
+
   } catch (e) {
-    console.error('LCPath: DOM scrape also failed', e);
-    return [];
+    console.error('LCPath: GraphQL fetch failed', e);
+    return null;
   }
 }
 
@@ -213,21 +206,23 @@ async function main() {
     // User hasn't set up yet — just send empty data, panel will show setup screen
     chrome.runtime.sendMessage({
       type: 'LCPATH_DATA',
-      payload: { solved: [], currentProblem: getCurrentProblemData(), currentCode: null, username: null }
+      payload: { userStats: null, currentProblem: getCurrentProblemData(), currentCode: null, username: null }
     });
     return;
   }
 
   // Check cache
-  let solved = stored[CACHE_KEY];
+  let userStats = stored[CACHE_KEY];
   const stale = !stored.lcpath_cache_time || (Date.now() - stored.lcpath_cache_time > CACHE_TTL);
 
-  if (!solved || stale) {
-    solved = await fetchSolvedProblems(username);
-    await chrome.storage.local.set({
-      [CACHE_KEY]: solved,
-      lcpath_cache_time: Date.now()
-    });
+  if (!userStats || stale) {
+    userStats = await fetchUserStats(username);
+    if (userStats) {
+      await chrome.storage.local.set({
+        [CACHE_KEY]: userStats,
+        lcpath_cache_time: Date.now()
+      });
+    }
   }
 
   const currentProblem = getCurrentProblemData();
@@ -236,7 +231,7 @@ async function main() {
   // Send to panel
   chrome.runtime.sendMessage({
     type: 'LCPATH_DATA',
-    payload: { solved, currentProblem, currentCode, username }
+    payload: { userStats, currentProblem, currentCode, username }
   });
 }
 

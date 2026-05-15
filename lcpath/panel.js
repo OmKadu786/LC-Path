@@ -44,7 +44,7 @@ document.getElementById('settings-btn').addEventListener('click', () => {
 
 chrome.runtime.onMessage.addListener((msg) => {
   if (msg.type === 'LCPATH_DATA') {
-    if (msg.payload.solved && msg.payload.solved.length > 0) {
+    if (msg.payload.userStats) {
       userData = msg.payload;
     } else if (msg.payload.currentProblem) {
       // Partial update (SPA navigation)
@@ -72,15 +72,13 @@ async function loadCachedData() {
       renderHome(userData);
       return;
     }
-  } catch (e) {
-    // session storage might not be available
-  }
+  } catch (e) {}
 
   // Try local cache
-  const stored = await chrome.storage.local.get(['lcpath_solved_cache', 'username']);
-  if (stored.lcpath_solved_cache) {
+  const stored = await chrome.storage.local.get(['lcpath_user_stats', 'username']);
+  if (stored.lcpath_user_stats) {
     userData = {
-      solved: stored.lcpath_solved_cache,
+      userStats: stored.lcpath_user_stats,
       currentProblem: { title: null, tags: [], difficulty: 'Unknown' },
       currentCode: null,
       username: stored.username
@@ -94,118 +92,45 @@ loadCachedData();
 
 // ─── RENDER STATS ───
 
-function renderStats(solved) {
-  const easy = solved.filter(p => p.difficulty === 'Easy').length;
-  const med = solved.filter(p => p.difficulty === 'Medium').length;
+function renderStats(stats) {
+  const all = stats.all || 0;
+  const easy = stats.easy || 0;
+  const med = stats.medium || 0;
 
-  document.getElementById('solved-count').textContent = `${solved.length} solved`;
-  document.getElementById('stat-solved').textContent = solved.length;
-  document.getElementById('stat-streak').textContent = '—'; // Would need submission dates to compute
-  document.getElementById('stat-ratio').textContent = easy > 0 || med > 0
-    ? `${Math.round((easy + med) / Math.max(solved.length, 1) * 100)}%`
+  document.getElementById('solved-count').textContent = `${all} solved`;
+  document.getElementById('stat-solved').textContent = all;
+  document.getElementById('stat-streak').textContent = '—'; // Hard to get via GraphQL easily
+  document.getElementById('stat-ratio').textContent = all > 0
+    ? `${Math.round(((easy + med) / all) * 100)}%`
     : '—';
 }
 
-
 // ─── TOPIC STRENGTH ───
 
-// Map of popular LeetCode problems → topic tags
-// In production, this would be fetched from a more complete source
-const TOPIC_MAP = {
-  'two-sum': ['Array', 'Hash Table'],
-  'valid-anagram': ['Hash Table', 'String'],
-  'binary-search': ['Binary Search'],
-  'best-time-to-buy-and-sell-stock': ['Array', 'DP'],
-  'maximum-subarray': ['Array', 'DP'],
-  'merge-two-sorted-lists': ['Linked List'],
-  'valid-parentheses': ['Stack', 'String'],
-  'climbing-stairs': ['DP'],
-  'invert-binary-tree': ['Tree', 'BFS'],
-  'linked-list-cycle': ['Linked List', 'Two Pointers'],
-  'reverse-linked-list': ['Linked List'],
-  'contains-duplicate': ['Array', 'Hash Table'],
-  'product-of-array-except-self': ['Array'],
-  'maximum-depth-of-binary-tree': ['Tree', 'BFS'],
-  'same-tree': ['Tree'],
-  'subtree-of-another-tree': ['Tree'],
-  'lowest-common-ancestor-of-a-binary-search-tree': ['Tree'],
-  'balanced-binary-tree': ['Tree'],
-  'coin-change': ['DP'],
-  'number-of-islands': ['Graph', 'BFS'],
-  'course-schedule': ['Graph', 'Topological Sort'],
-  'implement-trie-prefix-tree': ['Trie'],
-  'word-search': ['Backtracking'],
-  'group-anagrams': ['Hash Table', 'String'],
-  'top-k-frequent-elements': ['Hash Table', 'Heap'],
-  'encode-and-decode-strings': ['String'],
-  'longest-substring-without-repeating-characters': ['Sliding Window', 'Hash Table'],
-  'longest-repeating-character-replacement': ['Sliding Window'],
-  'minimum-window-substring': ['Sliding Window'],
-  'container-with-most-water': ['Two Pointers'],
-  '3sum': ['Two Pointers', 'Array'],
-  'trapping-rain-water': ['Two Pointers', 'Stack'],
-  'merge-intervals': ['Array', 'Sorting'],
-  'insert-interval': ['Array'],
-  'non-overlapping-intervals': ['DP', 'Greedy'],
-  'meeting-rooms': ['Array', 'Sorting'],
-  'rotate-image': ['Array', 'Matrix'],
-  'spiral-matrix': ['Array', 'Matrix'],
-  'set-matrix-zeroes': ['Array', 'Matrix'],
-  'house-robber': ['DP'],
-  'house-robber-ii': ['DP'],
-  'unique-paths': ['DP'],
-  'jump-game': ['DP', 'Greedy'],
-  'decode-ways': ['DP', 'String'],
-  'combination-sum': ['Backtracking'],
-  'permutations': ['Backtracking'],
-  'subsets': ['Backtracking'],
-  'word-break': ['DP'],
-  'longest-increasing-subsequence': ['DP', 'Binary Search'],
-  'pacific-atlantic-water-flow': ['Graph', 'BFS'],
-  'clone-graph': ['Graph', 'BFS'],
-  'design-add-and-search-words-data-structure': ['Trie'],
-  'kth-smallest-element-in-a-bst': ['Tree', 'Binary Search'],
-  'construct-binary-tree-from-preorder-and-inorder-traversal': ['Tree'],
-  'binary-tree-level-order-traversal': ['Tree', 'BFS'],
-  'validate-binary-search-tree': ['Tree'],
-  'serialize-and-deserialize-binary-tree': ['Tree'],
-  'find-median-from-data-stream': ['Heap'],
-  'merge-k-sorted-lists': ['Linked List', 'Heap'],
-  'remove-nth-node-from-end-of-list': ['Linked List', 'Two Pointers'],
-  'reorder-list': ['Linked List'],
-};
-
-function computeTopicStrength(solved) {
-  const counts = {};
-  solved.forEach(p => {
-    const tags = TOPIC_MAP[p.slug] || [];
-    tags.forEach(tag => { counts[tag] = (counts[tag] || 0) + 1; });
-  });
-  const max = Math.max(...Object.values(counts), 1);
-  return Object.entries(counts)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 8)
-    .map(([topic, count]) => ({ topic, pct: Math.round((count / max) * 100) }));
-}
-
-function renderTopicBars(solved) {
-  const topics = computeTopicStrength(solved);
+function renderTopicBars(tags) {
   const container = document.getElementById('topic-bars');
 
-  if (topics.length === 0) {
+  if (!tags || tags.length === 0) {
     container.innerHTML = '<div class="loading" style="font-size:12px;">Not enough data yet — keep solving!</div>';
     return;
   }
 
-  container.innerHTML = topics.map(({ topic, pct }) => {
+  // We use the highest solved tag count to determine the 100% width of the bars
+  const max = Math.max(...tags.map(t => t.problemsSolved), 1);
+
+  // Take top 8 tags for the UI
+  const displayTags = tags.slice(0, 8);
+
+  container.innerHTML = displayTags.map(({ tagName, problemsSolved }) => {
+    const pct = Math.round((problemsSolved / max) * 100);
     const cls = pct > 65 ? 'strong' : pct > 35 ? 'medium' : 'weak';
     return `
       <div class="bar-row">
-        <span class="bar-label">${topic}</span>
+        <span class="bar-label" title="${tagName}">${tagName.length > 12 ? tagName.substring(0, 10) + '..' : tagName}</span>
         <div class="bar-bg">
           <div class="bar-fill ${cls}" style="width:${pct}%"></div>
         </div>
-        <span class="bar-pct">${pct}%</span>
+        <span class="bar-pct">${problemsSolved}</span>
       </div>`;
   }).join('');
 }
@@ -213,9 +138,12 @@ function renderTopicBars(solved) {
 
 // ─── RECOMMENDATIONS (via DeepSeek) ───
 
-async function fetchRecommendations(solved, currentProblem) {
-  const solvedTitles = solved.map(p => p.title).join(', ');
-  const prompt = `You are a LeetCode study coach. The user has solved these problems: ${solvedTitles}.
+async function fetchRecommendations(userStats, currentProblem) {
+  const topTags = userStats.tags.slice(0, 5).map(t => t.tagName).join(', ');
+  const recent = userStats.recent.slice(0, 10).join(', ');
+  const prompt = `You are a LeetCode study coach. The user has solved ${userStats.stats.all} problems in their lifetime.
+Their strongest topics are: ${topTags}.
+They recently solved: ${recent}.
 They are currently looking at: ${currentProblem?.title || 'unknown'} (${currentProblem?.tags?.join(', ') || 'no tags'}).
 
 Return exactly 3 next problem recommendations as JSON (no markdown fences, just the JSON array):
@@ -272,12 +200,13 @@ function renderRecommendations(recs) {
   });
 }
 
-async function renderHome({ solved, currentProblem }) {
-  renderStats(solved);
-  renderTopicBars(solved);
+async function renderHome({ userStats, currentProblem }) {
+  if (!userStats) return;
+  renderStats(userStats.stats);
+  renderTopicBars(userStats.tags);
 
   try {
-    const recs = await fetchRecommendations(solved, currentProblem);
+    const recs = await fetchRecommendations(userStats, currentProblem);
     renderRecommendations(recs);
   } catch (e) {
     console.error('LCPath: recommendation fetch failed', e);
