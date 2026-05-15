@@ -35,10 +35,11 @@ const contextInterval = setInterval(() => {
 function buildSystemPrompt(userStats, currentProblem, currentCode) {
   const stats = userStats?.stats || { all: 0, easy: 0, medium: 0, hard: 0 };
   const tags = userStats?.tags || [];
-  const recent = userStats?.recent || [];
-
+  
   const topTags = tags.slice(0, 10).map(t => `${t.tagName} (${t.problemsSolved})`).join(', ');
-  const recentStr = recent.slice(0, 15).join(', ');
+  const solvedList = (userStats?.allSolved && userStats.allSolved.length > 0)
+    ? userStats.allSolved.join(', ')
+    : (userStats?.recent || []).slice(0, 15).join(', ');
 
   const current = currentProblem?.title
     ? `The user is currently working on: ${currentProblem.title} [${currentProblem.tags?.join(', ') || 'no tags'}]`
@@ -49,14 +50,14 @@ function buildSystemPrompt(userStats, currentProblem, currentCode) {
     : '';
 
   return `You are LCPath, a personalized LeetCode study coach.
-You know the user's entire LeetCode history stats, but only the titles of their last 20 solved problems.
+You know exactly which problems the user has solved in their lifetime.
 
 LIFETIME STATS:
 Total Solved: ${stats.all} (Easy: ${stats.easy}, Medium: ${stats.medium}, Hard: ${stats.hard})
 Top Topics: ${topTags}
-Recently Solved (last 20 max): ${recentStr}
 
-CRITICAL: Because you only see the last 20 problems, assume they have ALREADY solved the most common beginner problems (like "Two Sum") if they have more than 10 problems solved total.
+SOLVED PROBLEMS:
+${solvedList}
 
 ${current}${codeContext}
 

@@ -128,6 +128,20 @@ function getCSRFToken() {
   return match ? match[1] : '';
 }
 
+async function fetchAllSolvedProblems() {
+  try {
+    const res = await fetch('/api/problems/all/');
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.stat_status_pairs
+      .filter(p => p.status === 'ac')
+      .map(p => p.stat.question__title);
+  } catch (e) {
+    console.error('LCPath: fetchAllSolvedProblems error', e);
+    return [];
+  }
+}
+
 async function fetchUserStats(username) {
   const query = `
     query userProfile($username: String!) {
@@ -189,10 +203,13 @@ async function fetchUserStats(username) {
       stats[s.difficulty.toLowerCase()] = s.count;
     });
 
+    const allSolved = await fetchAllSolvedProblems();
+
     return {
       stats: stats, // { all: 100, easy: 30, medium: 50, hard: 20 }
       tags: tags.slice(0, 15), // top 15 tags
-      recent: recent.map(r => r.title)
+      recent: recent.map(r => r.title),
+      allSolved: allSolved
     };
 
   } catch (e) {
