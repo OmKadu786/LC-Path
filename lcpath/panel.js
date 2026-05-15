@@ -65,25 +65,28 @@ async function loadCachedData() {
   const ready = await checkSetup();
   if (!ready) return;
 
+  let sessionData = null;
   try {
     // Try session storage first (set by background.js)
     const session = await chrome.storage.session.get('lcpath_current_data');
     if (session.lcpath_current_data) {
-      userData = session.lcpath_current_data;
-      renderHome(userData);
-      return;
+      sessionData = session.lcpath_current_data;
     }
   } catch (e) {}
 
   // Try local cache
   const stored = await chrome.storage.local.get(['lcpath_user_stats', 'username']);
+  
   if (stored.lcpath_user_stats) {
     userData = {
       userStats: stored.lcpath_user_stats,
-      currentProblem: { title: null, tags: [], difficulty: 'Unknown' },
-      currentCode: null,
+      currentProblem: sessionData?.currentProblem || { title: null, tags: [], difficulty: 'Unknown' },
+      currentCode: sessionData?.currentCode !== undefined ? sessionData.currentCode : null,
       username: stored.username
     };
+    renderHome(userData);
+  } else if (sessionData && sessionData.userStats) {
+    userData = sessionData;
     renderHome(userData);
   }
 }

@@ -17,8 +17,12 @@ chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true })
 // Relay messages from content script to the side panel
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'LCPATH_DATA') {
-    // Store the data so the panel can retrieve it when it opens
-    chrome.storage.session.set({ lcpath_current_data: message.payload });
+    // Merge the data so the panel can retrieve it when it opens
+    chrome.storage.session.get('lcpath_current_data').then(session => {
+      const existing = session.lcpath_current_data || {};
+      const merged = { ...existing, ...message.payload };
+      chrome.storage.session.set({ lcpath_current_data: merged });
+    }).catch(e => console.error(e));
   }
 
   if (message.type === 'OPEN_SIDE_PANEL') {
