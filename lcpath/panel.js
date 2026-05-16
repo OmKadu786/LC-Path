@@ -198,18 +198,33 @@ function renderTopicBars(tags) {
 
 // ─── RECOMMENDATIONS (via DeepSeek) ───
 
+let currentRecs = [];
+let currentTopics = [];
+let currentRecIndex = 0;
+
+document.getElementById('reload-recs-btn').addEventListener('click', () => {
+  if (currentRecs.length > 0) {
+    currentRecIndex = (currentRecIndex + 3) % currentRecs.length;
+    renderRecommendationsState();
+  }
+});
+
 async function fetchRecommendations(userStats, currentProblem) {
   const topTags = userStats.tags.slice(0, 5).map(t => t.tagName).join(', ');
   const solvedList = (userStats.allSolved && userStats.allSolved.length > 0) 
     ? userStats.allSolved.join(', ')
     : userStats.recent.slice(0, 15).join(', ');
     
+  const easyRequirement = (userStats.stats.all || 0) < 500 
+    ? "Include at least 1 'Easy' problem." 
+    : "";
+
   const prompt = `You are a LeetCode study coach. The user has solved ${userStats.stats.all} problems in their lifetime.
 Their strongest topics are: ${topTags}.
 They have solved the following problems: ${solvedList}.
 They are currently looking at: ${currentProblem?.title || 'unknown'} (${currentProblem?.tags?.join(', ') || 'no tags'}).
 
-Return a JSON object with exactly 3 problem recommendations and 2 topic recommendations (no markdown fences, just the JSON object):
+Return a JSON object with exactly 9 problem recommendations and 2 topic recommendations (no markdown fences, just the JSON object):
 {
   "problems": [
     {
@@ -228,7 +243,7 @@ Return a JSON object with exactly 3 problem recommendations and 2 topic recommen
     }
   ]
 }
-Focus on filling their weakest topic gaps while building on what they know.`;
+Focus on filling their weakest topic gaps while building on what they know. ${easyRequirement}`;
 
   const res = await fetch('http://localhost:3000/api/chat', {
     method: 'POST',
@@ -268,14 +283,30 @@ Focus on filling their weakest topic gaps while building on what they know.`;
 }
 
 function renderRecommendations(recs) {
+  currentRecs = Array.isArray(recs) ? recs : (recs.problems || []);
+  currentTopics = Array.isArray(recs) ? [] : (recs.topics || []);
+  currentRecIndex = 0;
+  
+  if (currentRecs.length > 3) {
+    document.getElementById('reload-recs-btn').style.display = 'block';
+  }
+
+  renderRecommendationsState();
+}
+
+function renderRecommendationsState() {
   const container = document.getElementById('recommendations');
   const topicsContainer = document.getElementById('learn-next');
 
-  // If the old array format is returned, just render problems
-  const problems = Array.isArray(recs) ? recs : (recs.problems || []);
-  const topics = Array.isArray(recs) ? [] : (recs.topics || []);
+  // Grab 3 problems to show based on current index, wrapping around if needed
+  let displayRecs = [];
+  if (currentRecs.length > 0) {
+    for (let i = 0; i < 3; i++) {
+      displayRecs.push(currentRecs[(currentRecIndex + i) % currentRecs.length]);
+    }
+  }
 
-  container.innerHTML = problems.map((r, i) => `
+  container.innerHTML = displayRecs.map((r, i) => `
     <div class="rec-card">
       <div class="rec-title"><span style="color:var(--text-muted); font-size:11px; font-weight:normal; margin-right:4px;">${r.id || ''}.</span>${r.title}</div>
       <div class="rec-meta">
@@ -290,7 +321,7 @@ function renderRecommendations(recs) {
     </div>`
   ).join('');
 
-  topicsContainer.innerHTML = topics.length ? topics.map((t, i) => `
+  topicsContainer.innerHTML = currentTopics.length ? currentTopics.map((t, i) => `
     <div class="rec-card" style="border-left-color: #f39c12;">
       <div class="rec-title" style="margin-bottom: 4px;">📘 ${t.name}</div>
       <div class="rec-meta">
