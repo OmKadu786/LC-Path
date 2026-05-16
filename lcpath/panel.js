@@ -2,8 +2,7 @@
 
 let userData = null;
 
-// ─── INIT: CLEAR OLD CACHE FORMATS ───
-chrome.storage.local.remove(['lcpath_solved_cache']);
+// ─── INIT ───
 
 // ─── SETUP SCREEN ───
 
@@ -75,14 +74,14 @@ async function loadCachedData() {
   } catch (e) {}
 
   // Try local cache
-  const stored = await chrome.storage.local.get(['lcpath_user_stats', 'username']);
+  const stored = await chrome.storage.local.get(['lcpath_solved_cache', 'username']);
   
   let dataLoaded = false;
 
-  if (stored.lcpath_user_stats) {
+  if (stored.lcpath_solved_cache) {
     dataLoaded = true;
     userData = {
-      userStats: stored.lcpath_user_stats,
+      userStats: stored.lcpath_solved_cache,
       currentProblem: sessionData?.currentProblem || { title: null, tags: [], difficulty: 'Unknown' },
       currentCode: sessionData?.currentCode !== undefined ? sessionData.currentCode : null,
       username: stored.username
@@ -253,7 +252,7 @@ Focus on filling their weakest topic gaps while building on what they know. ${ea
     body: JSON.stringify({
       messages: [{ role: 'user', content: prompt }],
       temperature: 0.7,
-      max_tokens: 400
+      max_tokens: 1500
     })
   });
 
@@ -370,7 +369,7 @@ async function renderHome(data) {
   } catch (e) {
     console.error('LCPath: recommendation fetch failed', e);
     document.getElementById('recommendations').innerHTML =
-      '<div class="error">Could not load recommendations. Is your backend server running?</div>';
+      `<div class="error">Could not load recommendations.<br/><span style="font-size:10px; opacity:0.8">${e.message || e.toString()}</span></div>`;
   }
 }
 
