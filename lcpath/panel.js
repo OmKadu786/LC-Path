@@ -170,15 +170,23 @@ Their strongest topics are: ${topTags}.
 They have solved the following problems: ${solvedList}.
 They are currently looking at: ${currentProblem?.title || 'unknown'} (${currentProblem?.tags?.join(', ') || 'no tags'}).
 
-Return exactly 3 next problem recommendations as JSON (no markdown fences, just the JSON array):
-[
-  {
-    "title": "Problem Name",
-    "difficulty": "Easy|Medium|Hard",
-    "topic": "main topic tag",
-    "why": "one sentence reason based on their history"
-  }
-]
+Return a JSON object with exactly 3 problem recommendations and 2 topic recommendations (no markdown fences, just the JSON object):
+{
+  "problems": [
+    {
+      "title": "Problem Name",
+      "difficulty": "Easy|Medium|Hard",
+      "topic": "main topic tag",
+      "why": "one sentence reason based on their history"
+    }
+  ],
+  "topics": [
+    {
+      "name": "Topic Name",
+      "why": "one sentence reason why they should focus on this"
+    }
+  ]
+}
 Focus on filling their weakest topic gaps while building on what they know.`;
 
   const res = await fetch('http://localhost:3000/api/chat', {
@@ -204,22 +212,38 @@ Focus on filling their weakest topic gaps while building on what they know.`;
 
 function renderRecommendations(recs) {
   const container = document.getElementById('recommendations');
-  container.innerHTML = recs.map((r, i) => `
+  const topicsContainer = document.getElementById('learn-next');
+
+  // If the old array format is returned, just render problems
+  const problems = Array.isArray(recs) ? recs : (recs.problems || []);
+  const topics = Array.isArray(recs) ? [] : (recs.topics || []);
+
+  container.innerHTML = problems.map((r, i) => `
     <div class="rec-card">
       <div class="rec-title">${r.title}</div>
       <div class="rec-meta">
         <span class="badge diff-${r.difficulty.toLowerCase()}">${r.difficulty}</span>
         <span class="topic-tag">${r.topic}</span>
-        <button class="why-btn" data-why="${i}">why →</button>
+        <button class="why-btn" data-why="prob-${i}">why →</button>
       </div>
-      <div class="why-box" id="why-${i}">${r.why}</div>
+      <div class="why-box" id="why-prob-${i}">${r.why}</div>
     </div>`
   ).join('');
 
-  container.querySelectorAll('.why-btn').forEach(btn => {
+  topicsContainer.innerHTML = topics.length ? topics.map((t, i) => `
+    <div class="rec-card" style="border-left-color: #f39c12;">
+      <div class="rec-title" style="margin-bottom: 4px;">📘 ${t.name}</div>
+      <div class="rec-meta">
+        <button class="why-btn" data-why="topic-${i}">why →</button>
+      </div>
+      <div class="why-box" id="why-topic-${i}">${t.why}</div>
+    </div>`
+  ).join('') : '<div class="loading">No topic suggestions found.</div>';
+
+  document.querySelectorAll('.why-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const box = document.getElementById(`why-${btn.dataset.why}`);
-      box.classList.toggle('show');
+      if (box) box.classList.toggle('show');
     });
   });
 }
