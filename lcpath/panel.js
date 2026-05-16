@@ -128,30 +128,69 @@ function renderStats(stats) {
 
 // ─── TOPIC STRENGTH ───
 
+const TOTAL_PROBLEMS_PER_TAG = {
+  "Array": 2145, "String": 867, "Hash Table": 808, "Math": 666,
+  "Dynamic Programming": 653, "Sorting": 512, "Greedy": 460,
+  "Depth-First Search": 337, "Binary Search": 333, "Database": 310,
+  "Bit Manipulation": 281, "Matrix": 274, "Tree": 262,
+  "Breadth-First Search": 257, "Two Pointers": 251, "Prefix Sum": 245,
+  "Heap (Priority Queue)": 214, "Simulation": 207, "Counting": 203,
+  "Graph Theory": 181, "Binary Tree": 180, "Stack": 179,
+  "Sliding Window": 164, "Enumeration": 146, "Design": 136,
+  "Backtracking": 113, "Union-Find": 99, "Number Theory": 94,
+  "Linked List": 82, "Ordered Set": 76, "Segment Tree": 75,
+  "Monotonic Stack": 73, "Divide and Conquer": 65, "Trie": 61,
+  "Combinatorics": 61, "Bitmask": 55, "Queue": 54, "Recursion": 51,
+  "Geometry": 45, "Binary Indexed Tree": 44, "Memoization": 43,
+  "Binary Search Tree": 42, "Hash Function": 42, "Topological Sort": 40,
+  "Shortest Path": 38, "String Matching": 37, "Rolling Hash": 32,
+  "Game Theory": 30, "Interactive": 25, "Data Stream": 24,
+  "Monotonic Queue": 23, "Brainteaser": 21, "Merge Sort": 15,
+  "Doubly-Linked List": 15, "Randomized": 12, "Counting Sort": 11,
+  "Concurrency": 9, "Iterator": 9, "Sweep Line": 8,
+  "Suffix Array": 8, "Quickselect": 8, "Probability and Statistics": 7,
+  "Bucket Sort": 6, "Minimum Spanning Tree": 6, "Reservoir Sampling": 4,
+  "Shell": 4, "Radix Sort": 3, "Eulerian Circuit": 3,
+  "Rejection Sampling": 2, "Strongly Connected Component": 2,
+  "Biconnected Component": 1, "Ordered Map": 0
+};
+
 function renderTopicBars(tags) {
   const container = document.getElementById('topic-bars');
 
-  if (!tags || tags.length === 0) {
-    container.innerHTML = '<div class="loading" style="font-size:12px;">Not enough data yet — keep solving!</div>';
-    return;
+  const userTagsMap = new Map(tags.map(t => [t.tagName, t.problemsSolved]));
+  
+  // Base popular tags to fall back on if the user hasn't solved enough
+  const popularTags = [
+    'Array', 'String', 'Hash Table', 'Math', 'Dynamic Programming', 
+    'Sorting', 'Greedy', 'Depth-First Search'
+  ];
+
+  let displayTags = [...tags];
+
+  // If user has < 8 tags, pad with popular tags they haven't done
+  for (const p of popularTags) {
+    if (displayTags.length >= 8) break;
+    if (!userTagsMap.has(p)) {
+      displayTags.push({ tagName: p, problemsSolved: 0 });
+    }
   }
 
-  // We use the highest solved tag count to determine the 100% width of the bars
-  const max = Math.max(...tags.map(t => t.problemsSolved), 1);
-
-  // Take top 8 tags for the UI
-  const displayTags = tags.slice(0, 8);
+  // Ensure we show top 8
+  displayTags = displayTags.slice(0, 8);
 
   container.innerHTML = displayTags.map(({ tagName, problemsSolved }) => {
-    const pct = Math.round((problemsSolved / max) * 100);
-    const cls = pct > 65 ? 'strong' : pct > 35 ? 'medium' : 'weak';
+    const total = TOTAL_PROBLEMS_PER_TAG[tagName] || 100;
+    // Calculate percentage based on total problems for that tag, max 100%
+    const pct = Math.min(Math.round((problemsSolved / total) * 100), 100);
+    
     return `
       <div class="bar-row">
         <span class="bar-label" title="${tagName}">${tagName.length > 12 ? tagName.substring(0, 10) + '..' : tagName}</span>
         <div class="bar-bg">
-          <div class="bar-fill ${cls}" style="width:${pct}%"></div>
+          <div class="bar-fill" style="width:${pct}%; background: var(--primary);"></div>
         </div>
-        <span class="bar-pct">${problemsSolved}</span>
+        <span class="bar-pct">${problemsSolved}/${total}</span>
       </div>`;
   }).join('');
 }
