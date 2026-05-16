@@ -174,7 +174,9 @@ Return a JSON object with exactly 3 problem recommendations and 2 topic recommen
 {
   "problems": [
     {
-      "title": "Problem Name",
+      "id": 3,
+      "title": "Longest Substring Without Repeating Characters",
+      "slug": "longest-substring-without-repeating-characters",
       "difficulty": "Easy|Medium|Hard",
       "topic": "main topic tag",
       "why": "one sentence reason based on their history"
@@ -220,11 +222,14 @@ function renderRecommendations(recs) {
 
   container.innerHTML = problems.map((r, i) => `
     <div class="rec-card">
-      <div class="rec-title">${r.title}</div>
+      <div class="rec-title"><span style="color:var(--text-muted); font-size:11px; font-weight:normal; margin-right:4px;">${r.id || ''}.</span>${r.title}</div>
       <div class="rec-meta">
         <span class="badge diff-${r.difficulty.toLowerCase()}">${r.difficulty}</span>
         <span class="topic-tag">${r.topic}</span>
-        <button class="why-btn" data-why="prob-${i}">why →</button>
+        <div class="btn-group">
+          <a href="https://leetcode.com/problems/${r.slug}/" target="_blank" class="start-btn">Start ↗</a>
+          <button class="why-btn" data-why="prob-${i}">why →</button>
+        </div>
       </div>
       <div class="why-box" id="why-prob-${i}">${r.why}</div>
     </div>`

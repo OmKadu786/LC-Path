@@ -241,8 +241,33 @@ body {
   font-size: 12px;
 }
 
-.why-btn {
+.btn-group {
   margin-left: auto;
+  display: flex;
+  gap: 6px;
+}
+
+.start-btn {
+  background: var(--primary-bg);
+  border: 1px solid var(--primary-border);
+  padding: 3px 12px;
+  border-radius: 6px;
+  color: var(--primary);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+}
+
+.start-btn:hover {
+  background: var(--primary);
+  color: white;
+}
+
+.why-btn {
   background: var(--surface-hover);
   border: 1px solid var(--border);
   padding: 3px 14px;
