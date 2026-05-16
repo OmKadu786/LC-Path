@@ -341,21 +341,26 @@ function renderRecommendationsState() {
 async function renderHome(data) {
   if (!data || !data.userStats || !data.userStats.stats) {
     const container = document.getElementById('recommendations');
-    const debugStr = data ? JSON.stringify(data).substring(0, 150) : "data is null";
-    const errMsg = data?.userStats?.error ? data.userStats.error : "Missing stats. Debug: " + debugStr;
     if (container) {
-      container.innerHTML = `
-        <div class="error" style="margin-bottom:10px;">${errMsg}</div>
-        <button id="retry-btn" class="btn-primary" style="width:100%">Retry Fetching Data</button>
-      `;
-      document.getElementById('retry-btn').addEventListener('click', () => {
-        document.getElementById('retry-btn').textContent = 'Retrying...';
-        chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-          if (tabs[0]) chrome.tabs.sendMessage(tabs[0].id, { type: 'REFETCH_DATA' });
+      if (data && data.userStats && data.userStats.error) {
+        // Actual error from GraphQL
+        container.innerHTML = `
+          <div class="error" style="margin-bottom:10px;">${data.userStats.error}</div>
+          <button id="retry-btn" class="btn-primary" style="width:100%">Retry Fetching Data</button>
+        `;
+        document.getElementById('retry-btn').addEventListener('click', () => {
+          document.getElementById('retry-btn').textContent = 'Retrying...';
+          chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+            if (tabs[0]) chrome.tabs.sendMessage(tabs[0].id, { type: 'REFETCH_DATA' });
+          });
         });
-      });
+        document.getElementById('topic-bars').innerHTML = '<div class="error">Failed to load topic stats.</div>';
+      } else {
+        // Just loading/waiting for content script
+        container.innerHTML = '<div class="loading">Syncing data from LeetCode...</div>';
+        document.getElementById('topic-bars').innerHTML = '<div class="loading" style="padding:12px;">Waiting...</div>';
+      }
     }
-    document.getElementById('topic-bars').innerHTML = '<div class="error">Failed to load topic stats.</div>';
     return;
   }
   
