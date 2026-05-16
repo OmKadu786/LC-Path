@@ -368,8 +368,12 @@ async function renderHome(data) {
     renderRecommendations(recs);
   } catch (e) {
     console.error('LCPath: recommendation fetch failed', e);
-    document.getElementById('recommendations').innerHTML =
-      `<div class="error">Could not load recommendations.<br/><span style="font-size:10px; opacity:0.8">${e.message || e.toString()}</span></div>`;
+    const errorHtml = `<div class="error">Could not load recommendations.<br/><span style="font-size:10px; opacity:0.8">${e.message || e.toString()}</span></div>`;
+    document.getElementById('recommendations').innerHTML = errorHtml;
+    const learnNextContainer = document.getElementById('learn-next');
+    if (learnNextContainer) {
+      learnNextContainer.innerHTML = errorHtml;
+    }
   }
 }
 
