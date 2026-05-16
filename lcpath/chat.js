@@ -9,6 +9,34 @@ const contextPill  = document.getElementById('context-pill');
 let chatHistory = []; // [{role, content}] — full conversation context
 let hintCount = 0;
 
+// Load history from storage on init
+async function loadChatHistory() {
+  const data = await chrome.storage.local.get(['lcpath_chat_history', 'lcpath_hint_count']);
+  if (data.lcpath_chat_history) {
+    chatHistory = data.lcpath_chat_history;
+    // Render existing history
+    chatMessages.innerHTML = '';
+    chatHistory.forEach(msg => {
+      if (msg.role !== 'system') {
+        addMessageToUI(msg.role, msg.content, false);
+      }
+    });
+  }
+  if (data.lcpath_hint_count !== undefined) {
+    hintCount = data.lcpath_hint_count;
+    updateHintButtonUI();
+  }
+}
+
+async function saveChatHistory() {
+  await chrome.storage.local.set({
+    lcpath_chat_history: chatHistory,
+    lcpath_hint_count: hintCount
+  });
+}
+
+loadChatHistory();
+
 
 // ─── UPDATE CONTEXT PILL ───
 
@@ -42,31 +70,23 @@ function buildSystemPrompt(userStats, currentProblem, currentCode) {
     : (userStats?.recent || []).slice(0, 15).join(', ');
 
   const current = currentProblem?.title
-    ? `The user is currently working on: ${currentProblem.title} [${currentProblem.tags?.join(', ') || 'no tags'}]`
-    : 'The user is browsing LeetCode.';
+    ? `Working on: ${currentProblem.title} [${currentProblem.tags?.join(', ') || 'no tags'}]`
+    : 'Browsing LeetCode.';
 
   const codeContext = currentCode
-    ? `\n\nThe user's current code:\n\`\`\`\n${currentCode}\n\`\`\``
+    ? `\n\nCURRENT CODE:\n\`\`\`\n${currentCode}\n\`\`\``
     : '';
 
-  return `You are LCPath, a personalized LeetCode study coach.
-You know exactly which problems the user has solved in their lifetime.
-
-LIFETIME STATS:
-Total Solved: ${stats.all} (Easy: ${stats.easy}, Medium: ${stats.medium}, Hard: ${stats.hard})
-Top Topics: ${topTags}
-
-SOLVED PROBLEMS:
-${solvedList}
-
+  return `You are LCPath, a Socratic LeetCode coach. 
+Context: User has solved ${stats.all} problems. Top topics: ${topTags}.
 ${current}${codeContext}
 
-Use this context to give highly personalized advice.
-CRITICAL INSTRUCTIONS:
-1. NEVER GIVE THE FULL SOLUTION OR EXACT CODE immediately unless the user explicitly demands it (e.g. "show me the code").
-2. ALWAYS use the Socratic method. Guide the user to the answer by giving subtle hints, pointing out flaws in their logic, or asking guiding questions.
-3. If they show code with a bug, point them to the exact line and explain why it fails, but let them fix it themselves.
-4. Be concise and conversational. No fluff.`;
+GOAL: Guide the user to solve the problem themselves.
+RULES:
+1. NEVER provide full code or direct solutions unless explicitly forced.
+2. Use the Socratic method: ask questions, point out edge cases, or give tiny logic nudges.
+3. If their code has a bug, describe the logical flaw or an input that breaks it.
+4. Be concise, technical, and encouraging.`;
 }
 
 
@@ -78,11 +98,12 @@ async function sendMessage() {
   chatInput.value = '';
 
   // Render user message
-  addMessage('user', text);
+  addMessageToUI('user', text);
   chatHistory.push({ role: 'user', content: text });
+  saveChatHistory();
 
   // Thinking indicator
-  const thinkingEl = addMessage('ai', '...');
+  const thinkingEl = addMessageToUI('ai', '...');
   thinkingEl.classList.add('loading');
 
   try {
@@ -102,21 +123,24 @@ async function sendMessage() {
           { role: 'system', content: systemPrompt },
           ...chatHistory
         ],
-        temperature: 0.8,
+        temperature: 0.5,
         max_tokens: 800
       })
     });
 
     const data = await res.json();
+    if (!data.choices || !data.choices[0]) throw new Error('Invalid API response');
+    
     const reply = data.choices[0].message.content;
 
     thinkingEl.classList.remove('loading');
     thinkingEl.innerHTML = formatMessage(reply);
     chatHistory.push({ role: 'assistant', content: reply });
+    saveChatHistory();
 
   } catch (e) {
     thinkingEl.classList.remove('loading');
-    thinkingEl.textContent = 'Error reaching DeepSeek. Check your API key in settings.';
+    thinkingEl.textContent = 'Error reaching AI Backend. Check your server and API key.';
     thinkingEl.classList.add('error');
     console.error('LCPath chat error:', e);
   }
@@ -128,30 +152,41 @@ async function sendMessage() {
 // ─── FORMAT MESSAGE (parse code blocks like LLMs) ───
 
 function formatMessage(text) {
-  // Replace ```lang\ncode\n``` blocks with styled code blocks
+  // Use a temporary map to store code blocks and avoid newline replacement inside them
+  const codeBlocks = [];
   const codeBlockRegex = /```(\w+)?\n([\s\S]*?)```/g;
 
   let formatted = text.replace(codeBlockRegex, (match, lang, code) => {
+    const id = `__CODE_BLOCK_${codeBlocks.length}__`;
     const language = lang || 'code';
     const escapedCode = escapeHtml(code.trim());
-    return `
-      <div class="chat-code-block">
-        <div class="chat-code-header">
-          <span>${language}</span>
-          <button class="copy-code-btn" onclick="copyCode(this)" title="Copy code">📋</button>
-        </div>
-        <div class="chat-code-content">${highlightSyntax(escapedCode, language)}</div>
-      </div>`;
+    codeBlocks.push({
+      id,
+      html: `
+        <div class="chat-code-block">
+          <div class="chat-code-header">
+            <span>${language}</span>
+            <button class="copy-code-btn" onclick="copyCode(this)" title="Copy code">📋</button>
+          </div>
+          <div class="chat-code-content">${highlightSyntax(escapedCode, language)}</div>
+        </div>`
+    });
+    return id;
   });
 
   // Replace inline `code` with styled spans
-  formatted = formatted.replace(/`([^`]+)`/g, '<code style="background:#333;padding:2px 6px;border-radius:4px;font-family:monospace;font-size:12px;">$1</code>');
+  formatted = formatted.replace(/`([^`]+)`/g, '<code class="inline-code">$1</code>');
 
-  // Replace newlines with <br> (but not inside code blocks)
+  // Replace newlines with <br> safely
   formatted = formatted.replace(/\n/g, '<br>');
 
   // Bold text
   formatted = formatted.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+
+  // Put code blocks back
+  codeBlocks.forEach(block => {
+    formatted = formatted.replace(block.id, block.html);
+  });
 
   return formatted;
 }
@@ -207,17 +242,29 @@ window.copyCode = function(btn) {
 
 // ─── ADD MESSAGE TO CHAT ───
 
-function addMessage(role, text) {
+function addMessageToUI(role, text, shouldFormat = true) {
   const el = document.createElement('div');
   el.className = `msg msg-${role}`;
   if (role === 'ai') {
-    el.innerHTML = formatMessage(text);
+    el.innerHTML = shouldFormat ? formatMessage(text) : text;
   } else {
     el.textContent = text;
   }
   chatMessages.appendChild(el);
   chatMessages.scrollTop = chatMessages.scrollHeight;
   return el;
+}
+
+// Helper for hint button UI
+function updateHintButtonUI() {
+  if (hintCount < 3) {
+    hintBtn.textContent = `💡 Hint (${hintCount + 1}/3)`;
+  } else if (hintCount === 3) {
+    hintBtn.textContent = '💻 Show Code';
+  } else {
+    hintBtn.textContent = '✅ All hints revealed';
+    hintBtn.disabled = true;
+  }
 }
 
 
@@ -253,7 +300,7 @@ async function requestHint() {
   const prompt = hintLevels[hintCount] + codeContext;
 
   // Show thinking indicator
-  const thinkingEl = addMessage('ai', '...');
+  const thinkingEl = addMessageToUI('ai', '...');
   thinkingEl.classList.add('loading');
 
   try {
@@ -273,34 +320,32 @@ async function requestHint() {
           { role: 'system', content: systemPrompt },
           { role: 'user', content: prompt }
         ],
-        temperature: 0.7,
+        temperature: 0.4, // Low temperature for consistent hints
         max_tokens: hintCount === 3 ? 800 : 400
       })
     });
 
     const data = await res.json();
+    if (!data.choices || !data.choices[0]) throw new Error('Invalid API response');
+    
     const reply = data.choices[0].message.content;
 
     thinkingEl.classList.remove('loading');
     thinkingEl.innerHTML = formatMessage(reply);
+    
+    // Also add to history so AI knows what hints were given
+    chatHistory.push({ role: 'assistant', content: `[Hint ${hintCount+1}] ${reply}` });
+    saveChatHistory();
 
   } catch (e) {
     thinkingEl.classList.remove('loading');
     thinkingEl.textContent = 'Error getting hint. Check your API key.';
     thinkingEl.classList.add('error');
+    console.error('Hint error:', e);
   }
 
   hintCount++;
-
-  // Update button text
-  if (hintCount < 3) {
-    hintBtn.textContent = `💡 Hint (${hintCount + 1}/3)`;
-  } else if (hintCount === 3) {
-    hintBtn.textContent = '💻 Show Code';
-  } else {
-    hintBtn.textContent = '✅ All hints revealed';
-    hintBtn.disabled = true;
-  }
+  updateHintButtonUI();
 
   chatMessages.scrollTop = chatMessages.scrollHeight;
 }
@@ -309,6 +354,23 @@ async function requestHint() {
 // ─── EVENT LISTENERS ───
 
 chatSend.addEventListener('click', sendMessage);
+
+// Clear history button (optional, but good for UX)
+const clearBtn = document.createElement('button');
+clearBtn.textContent = '🗑️';
+clearBtn.title = 'Clear History';
+clearBtn.className = 'clear-chat-btn';
+clearBtn.onclick = async () => {
+  if (confirm('Clear chat history?')) {
+    chatHistory = [];
+    hintCount = 0;
+    await saveChatHistory();
+    chatMessages.innerHTML = '';
+    updateHintButtonUI();
+    addMessageToUI('ai', 'Chat history cleared. How can I help you today?');
+  }
+};
+document.querySelector('.chat-input-area').prepend(clearBtn);
 
 chatInput.addEventListener('keydown', (e) => {
   if (e.key === 'Enter' && !e.shiftKey) {

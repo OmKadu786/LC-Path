@@ -243,12 +243,28 @@ Focus on filling their weakest topic gaps while building on what they know.`;
   });
 
   const data = await res.json();
+  if (!data.choices || !data.choices[0]) throw new Error('Invalid API response');
   let text = data.choices[0].message.content.trim();
 
-  // Strip markdown code fences if present
-  text = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-
-  return JSON.parse(text);
+  // Robust JSON extraction
+  try {
+    // Try to find JSON within code blocks first
+    const match = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+    if (match) {
+      text = match[1].trim();
+    } else {
+      // Look for the first '{' and last '}'
+      const start = text.indexOf('{');
+      const end = text.lastIndexOf('}');
+      if (start !== -1 && end !== -1) {
+        text = text.substring(start, end + 1);
+      }
+    }
+    return JSON.parse(text);
+  } catch (e) {
+    console.error("Failed to parse recommendations JSON:", text);
+    throw new Error("Failed to parse AI recommendations");
+  }
 }
 
 function renderRecommendations(recs) {
