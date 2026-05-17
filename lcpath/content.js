@@ -105,20 +105,32 @@ function getCurrentProblemData() {
 // ─── 3. READ CODE FROM THE EDITOR ───
 
 function getCurrentCode() {
-  // Try Monaco editor (LeetCode's main editor)
+  // Best: use Monaco editor's internal model (gets ALL lines, not just visible ones)
+  try {
+    const monacoEditors = window.monaco?.editor?.getEditors?.();
+    if (monacoEditors && monacoEditors.length > 0) {
+      const code = monacoEditors[0].getModel()?.getValue();
+      if (code && code.trim().length > 0) return code;
+    }
+  } catch (e) { /* monaco not ready */ }
+
+  // Fallback: read from the hidden textarea that Monaco keeps in sync
+  try {
+    const textarea = document.querySelector('.monaco-editor textarea');
+    if (textarea && textarea.value && textarea.value.trim().length > 0) {
+      return textarea.value;
+    }
+  } catch (e) { /* skip */ }
+
+  // Last resort: scrape visible DOM lines (incomplete for large files)
   const viewLines = document.querySelectorAll('.view-lines .view-line');
   if (viewLines.length > 0) {
     return [...viewLines].map(line => line.textContent).join('\n');
   }
 
-  // Try textarea fallback
-  const textarea = document.querySelector('textarea.inputarea');
-  if (textarea) {
-    return textarea.value;
-  }
-
   return null;
 }
+
 
 
 // ─── 4. FETCH FULL USER STATS VIA LEETCODE GRAPHQL API ───
