@@ -34,15 +34,18 @@ Your Node.js backend just acts as a proxy to hide your API keys. It does no heav
 
 Your target demographic consists of **Computer Science students and job seekers**. This demographic is notoriously price-sensitive, but they are highly motivated to pass interviews. For context, *LeetCode Premium* costs $35/month.
 
-### Option A: The "No-Brainer" Subscription
-* **$4.99 / Month** or **$39 / Year**.
-* It’s the price of a coffee. It sits perfectly below the psychological threshold of "an expensive subscription."
-* With an $0.08 cost to serve them, you keep **98% gross margins**.
+### The Dual-Pricing Model (Monthly + Lifetime)
+The absolute best strategy for a developer tool like LCPath is to offer **both** a monthly subscription and a lifetime deal side-by-side. This creates a psychological "anchor" that makes the lifetime deal look incredibly valuable, while still capturing users who only want to pay for a month before an upcoming interview.
 
-### Option B: The "Student Lifetime Deal" (Highly Recommended for Launch)
-* **$29.99 One-Time Payment (Lifetime Access)**.
-* Students hate recurring subscriptions. A lifetime deal removes all purchase friction.
-* Since a user usually only grinds LeetCode for 3 to 6 months before getting a job, their "lifetime" usage is naturally capped. They pay $30, cost you $0.50 in API fees over 6 months, and you make massive upfront cash to fund marketing.
+* **Tier 1: Monthly Subscription ($4.99 / Month)**
+  * Perfect for the user who has a FAANG interview in 3 weeks and just needs immediate, short-term coaching.
+  * It’s the price of a coffee. It sits perfectly below the psychological threshold of "an expensive subscription."
+  * With an $0.08 cost to serve them, you keep **98% gross margins**.
+
+* **Tier 2: Lifetime Deal ($29.99 One-Time Payment)**
+  * Students absolutely despise recurring subscriptions. A lifetime deal removes all purchase friction.
+  * When placed next to the $4.99/mo option, users will do the math: *"If I use this for 6 months, the lifetime deal pays for itself!"* This massively increases your conversion rate.
+  * Since a user usually only grinds LeetCode for 3 to 6 months before getting a job, their "lifetime" usage is naturally capped. They pay $30, cost you $0.50 in API fees over 6 months, and you make massive upfront cash to fund marketing.
 
 ---
 
