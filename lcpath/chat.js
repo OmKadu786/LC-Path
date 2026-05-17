@@ -113,7 +113,7 @@ async function sendMessage() {
       userData?.currentCode
     );
 
-    const res = await fetch('http://localhost:3000/api/chat', {
+    const res = await fetch('https://lc-path.onrender.com/api/chat', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -310,7 +310,7 @@ async function requestHint() {
       userData?.currentCode
     );
 
-    const res = await fetch('http://localhost:3000/api/chat', {
+    const res = await fetch('https://lc-path.onrender.com/api/chat', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'

@@ -244,7 +244,7 @@ Return a JSON object with exactly 9 problem recommendations and 2 topic recommen
 }
 Focus on filling their weakest topic gaps while building on what they know. ${easyRequirement}`;
 
-  const res = await fetch('http://localhost:3000/api/chat', {
+  const res = await fetch('https://lc-path.onrender.com/api/chat', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
