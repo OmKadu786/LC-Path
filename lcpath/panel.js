@@ -289,8 +289,21 @@ Focus on filling their weakest topic gaps while building on what they know. ${ea
   }
 }
 
-function renderRecommendations(recs) {
-  currentRecs = Array.isArray(recs) ? recs : (recs.problems || []);
+function renderRecommendations(recs, solvedList = []) {
+  const allProblems = Array.isArray(recs) ? recs : (recs.problems || []);
+
+  // Normalise solved titles for fast lookup (lowercase, strip punctuation)
+  const solvedSet = new Set(
+    solvedList.map(t => t.toLowerCase().replace(/[^a-z0-9]/g, ''))
+  );
+
+  // Filter out problems the user has already solved
+  currentRecs = allProblems.filter(r => {
+    const titleKey = (r.title || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const slugKey  = (r.slug  || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    return !solvedSet.has(titleKey) && !solvedSet.has(slugKey);
+  });
+
   currentTopics = Array.isArray(recs) ? [] : (recs.topics || []);
   currentRecIndex = 0;
   currentTopicIndex = 0;
@@ -401,7 +414,7 @@ async function renderHome(data) {
 
   try {
     const recs = await fetchRecommendations(userStats, currentProblem);
-    renderRecommendations(recs);
+    renderRecommendations(recs, userStats.allSolved || []);
   } catch (e) {
     console.error('LCPath: recommendation fetch failed', e);
     const errorHtml = `<div class="error">Could not load recommendations.<br/><span style="font-size:10px; opacity:0.8">${e.message || e.toString()}</span></div>`;
