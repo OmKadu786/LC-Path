@@ -200,11 +200,19 @@ function renderTopicBars(tags) {
 let currentRecs = [];
 let currentTopics = [];
 let currentRecIndex = 0;
+let currentTopicIndex = 0;
 
 document.getElementById('reload-recs-btn').addEventListener('click', () => {
   if (currentRecs.length > 0) {
     currentRecIndex = (currentRecIndex + 3) % currentRecs.length;
     renderRecommendationsState();
+  }
+});
+
+document.getElementById('reload-topics-btn').addEventListener('click', () => {
+  if (currentTopics.length > 0) {
+    currentTopicIndex = (currentTopicIndex + 2) % currentTopics.length;
+    renderTopicsState();
   }
 });
 
@@ -285,17 +293,21 @@ function renderRecommendations(recs) {
   currentRecs = Array.isArray(recs) ? recs : (recs.problems || []);
   currentTopics = Array.isArray(recs) ? [] : (recs.topics || []);
   currentRecIndex = 0;
-  
+  currentTopicIndex = 0;
+
   if (currentRecs.length > 3) {
     document.getElementById('reload-recs-btn').style.display = 'block';
   }
+  if (currentTopics.length > 2) {
+    document.getElementById('reload-topics-btn').style.display = 'block';
+  }
 
   renderRecommendationsState();
+  renderTopicsState();
 }
 
 function renderRecommendationsState() {
   const container = document.getElementById('recommendations');
-  const topicsContainer = document.getElementById('learn-next');
 
   // Grab 3 problems to show based on current index, wrapping around if needed
   let displayRecs = [];
@@ -320,7 +332,26 @@ function renderRecommendationsState() {
     </div>`
   ).join('');
 
-  topicsContainer.innerHTML = currentTopics.length ? currentTopics.map((t, i) => `
+  document.querySelectorAll('#recommendations .why-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const box = document.getElementById(`why-${btn.dataset.why}`);
+      if (box) box.classList.toggle('show');
+    });
+  });
+}
+
+function renderTopicsState() {
+  const topicsContainer = document.getElementById('learn-next');
+
+  // Show 2 topics at a time, cycling through the full list
+  let displayTopics = [];
+  if (currentTopics.length > 0) {
+    for (let i = 0; i < 2; i++) {
+      displayTopics.push(currentTopics[(currentTopicIndex + i) % currentTopics.length]);
+    }
+  }
+
+  topicsContainer.innerHTML = displayTopics.length ? displayTopics.map((t, i) => `
     <div class="rec-card" style="border-left-color: #f39c12;">
       <div class="rec-title" style="margin-bottom: 4px;">📘 ${t.name}</div>
       <div class="rec-meta">
@@ -330,7 +361,7 @@ function renderRecommendationsState() {
     </div>`
   ).join('') : '<div class="loading">No topic suggestions found.</div>';
 
-  document.querySelectorAll('.why-btn').forEach(btn => {
+  document.querySelectorAll('#learn-next .why-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const box = document.getElementById(`why-${btn.dataset.why}`);
       if (box) box.classList.toggle('show');

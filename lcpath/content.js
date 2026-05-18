@@ -283,7 +283,22 @@ main();
 let lastUrl = location.href;
 const observer = new MutationObserver(() => {
   if (location.href !== lastUrl) {
+    const prevUrl = lastUrl;
     lastUrl = location.href;
+
+    // Detect when user lands on a submission result page
+    // LeetCode URL pattern: /submissions/detail/<id>/
+    const justSubmitted = location.href.includes('/submissions/') ||
+                          location.href.includes('/submit/');
+    const cameFromProblem = prevUrl.includes('/problems/');
+
+    if (justSubmitted || cameFromProblem) {
+      // Bust the cache so updated stats get fetched fresh
+      chrome.storage.local.remove([CACHE_KEY, 'lcpath_cache_time'], () => {
+        console.log('LCPath: cache busted after submission, will refresh stats');
+      });
+    }
+
     setTimeout(() => {
       injectButton();
       // Re-scrape current problem data and code
