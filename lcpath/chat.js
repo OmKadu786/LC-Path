@@ -303,6 +303,9 @@ async function requestHint() {
   document.querySelectorAll('.tab')[1].classList.add('active');
   document.getElementById('tab-chat').classList.add('active');
 
+  // Grab the latest code from the editor when switching to Chat
+  if (typeof requestFreshCode === 'function') requestFreshCode();
+
   const currentCode = userData?.currentCode;
   const codeContext = currentCode
     ? `\n\nThe user's current code:\n\`\`\`\n${currentCode}\n\`\`\``

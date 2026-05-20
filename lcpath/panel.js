@@ -47,17 +47,25 @@ document.getElementById('settings-btn').addEventListener('click', () => {
 chrome.runtime.onMessage.addListener((msg) => {
   if (msg.type === 'LCPATH_DATA') {
     if (!userData) {
-      if (msg.payload.userStats === undefined) return; // Ignore partial SPA updates if not initialized
+      if (msg.payload.userStats === undefined) return;
       userData = msg.payload;
     } else {
       if (msg.payload.userStats) userData.userStats = msg.payload.userStats;
       if (msg.payload.currentProblem) userData.currentProblem = msg.payload.currentProblem;
       if (msg.payload.currentCode !== undefined) userData.currentCode = msg.payload.currentCode;
+      if (msg.payload.submissionResult !== undefined) userData.submissionResult = msg.payload.submissionResult;
       if (msg.payload.username) userData.username = msg.payload.username;
     }
     renderHome(userData);
   }
 });
+
+// Request a fresh code snapshot from the content script
+function requestFreshCode() {
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    if (tabs[0]) chrome.tabs.sendMessage(tabs[0].id, { type: 'FETCH_CODE' });
+  });
+}
 
 // Also try to load cached data on panel open
 async function loadCachedData() {

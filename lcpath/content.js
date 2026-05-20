@@ -354,6 +354,17 @@ async function main() {
     type: 'LCPATH_DATA',
     payload: { userStats, currentProblem, currentCode, submissionResult, username }
   });
+
+  // Monaco may not be fully loaded yet — retry code read after 3 more seconds
+  setTimeout(async () => {
+    const retryCode = await getCurrentCode();
+    if (retryCode && retryCode !== currentCode) {
+      chrome.runtime.sendMessage({
+        type: 'LCPATH_DATA',
+        payload: { currentCode: retryCode }
+      });
+    }
+  }, 3000);
 }
 
 // Run on load
@@ -410,11 +421,21 @@ resultObserver.observe(document.body, { childList: true, subtree: true });
 observer.observe(document.body, { childList: true, subtree: true });
 
 // Listen for manual refetch from panel
-chrome.runtime.onMessage.addListener((msg) => {
+chrome.runtime.onMessage.addListener(async (msg) => {
   if (msg.type === 'REFETCH_DATA') {
     // Clear old data and try again
     chrome.storage.local.remove([CACHE_KEY, 'lcpath_cache_time'], () => {
       main();
+    });
+  }
+
+  // Panel opened or switched to chat tab — send a fresh code snapshot
+  if (msg.type === 'FETCH_CODE') {
+    const currentCode = await getCurrentCode();
+    const submissionResult = getSubmissionResult();
+    chrome.runtime.sendMessage({
+      type: 'LCPATH_DATA',
+      payload: { currentCode, submissionResult }
     });
   }
 });
