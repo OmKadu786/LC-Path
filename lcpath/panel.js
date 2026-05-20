@@ -209,6 +209,7 @@ let currentRecs = [];
 let currentTopics = [];
 let currentRecIndex = 0;
 let currentTopicIndex = 0;
+let lastTopicsRefreshAt = 0; // solved count at last topic refresh
 
 document.getElementById('reload-recs-btn').addEventListener('click', () => {
   if (currentRecs.length > 0) {
@@ -431,9 +432,10 @@ async function renderHome(data) {
   renderStats(userStats.stats);
   renderTopicBars(userStats.tags);
 
-  // If we already have a pool and the user just solved a problem,
-  // only re-filter the existing pool instead of triggering a full AI refetch.
   const solvedList = userStats.allSolved || [];
+  const totalSolved = userStats.stats.all || 0;
+
+  // If we already have a pool, re-filter it on each solve rather than full refetch
   if (currentRecs.length > 0) {
     const solvedSet = new Set(solvedList.map(t => t.toLowerCase().replace(/[^a-z0-9]/g, '')));
     currentRecs = currentRecs.filter(r => {
@@ -443,17 +445,38 @@ async function renderHome(data) {
     });
     renderRecommendationsState();
 
-    // If pool is running low (< 4 left), silently fetch 20 more and merge them in
+    // If pool is running low (< 4 left), silently fetch 20 more and merge in
     if (currentRecs.length < 4) {
       fetchRecommendations(userStats, currentProblem)
         .then(recs => renderRecommendations(recs, solvedList, true))
         .catch(() => {});
     }
+
+    // Refresh Learn Next topics every 5 problems solved
+    const solvedSinceTopicRefresh = totalSolved - lastTopicsRefreshAt;
+    if (solvedSinceTopicRefresh >= 5) {
+      fetchRecommendations(userStats, currentProblem)
+        .then(recs => {
+          const newTopics = Array.isArray(recs) ? [] : (recs.topics || []);
+          if (newTopics.length > 0) {
+            currentTopics = newTopics;
+            currentTopicIndex = 0;
+            lastTopicsRefreshAt = totalSolved;
+            if (currentTopics.length > 2) {
+              document.getElementById('reload-topics-btn').style.display = 'block';
+            }
+            renderTopicsState();
+          }
+        })
+        .catch(() => {});
+    }
+
     return;
   }
 
   try {
     const recs = await fetchRecommendations(userStats, currentProblem);
+    lastTopicsRefreshAt = userStats.stats.all || 0;
     renderRecommendations(recs, solvedList);
   } catch (e) {
     console.error('LCPath: recommendation fetch failed', e);
