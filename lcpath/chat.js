@@ -57,6 +57,28 @@ const contextInterval = setInterval(() => {
   }
 }, 500);
 
+// ─── LIVE CODE POLLING ───
+// While the Chat tab is open, refresh the user's code every 4 seconds
+// so the AI always sees the latest version without requiring a tab switch.
+let codePollingInterval = null;
+
+function startCodePolling() {
+  if (codePollingInterval) return;
+  codePollingInterval = setInterval(() => {
+    if (typeof requestFreshCode === 'function') requestFreshCode();
+  }, 4000);
+}
+
+function stopCodePolling() {
+  clearInterval(codePollingInterval);
+  codePollingInterval = null;
+}
+
+// Start polling immediately if Chat tab is already active on load
+if (document.getElementById('tab-chat')?.classList.contains('active')) {
+  startCodePolling();
+}
+
 
 // ─── BUILD SYSTEM PROMPT ───
 
@@ -116,6 +138,13 @@ async function sendMessage() {
   // Thinking indicator
   const thinkingEl = addMessageToUI('ai', '...');
   thinkingEl.classList.add('loading');
+
+  // Snapshot the latest code right before building the prompt
+  // This ensures we have the current editor state even if polling hasn't fired yet
+  if (typeof requestFreshCode === 'function') {
+    requestFreshCode();
+    await new Promise(r => setTimeout(r, 400)); // brief wait for round-trip
+  }
 
   try {
     const systemPrompt = buildSystemPrompt(

@@ -497,5 +497,13 @@ document.querySelectorAll('.tab').forEach(tab => {
     document.querySelectorAll('.tab, .tab-content').forEach(el => el.classList.remove('active'));
     tab.classList.add('active');
     document.getElementById(`tab-${tab.dataset.tab}`).classList.add('active');
+
+    if (tab.dataset.tab === 'chat') {
+      // Start polling for fresh code while on Chat tab
+      if (typeof startCodePolling === 'function') startCodePolling();
+    } else {
+      // Stop polling when leaving Chat tab
+      if (typeof stopCodePolling === 'function') stopCodePolling();
+    }
   });
 });
