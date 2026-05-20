@@ -42,10 +42,10 @@ loadChatHistory();
 
 function updateContextPill() {
   if (userData && userData.userStats) {
-    contextPill.textContent = `📋 knows your ${userData.userStats.stats.all} solved problems`;
-    if (userData.currentCode) {
-      contextPill.textContent += ` + your code`;
-    }
+    let pill = `📋 knows your ${userData.userStats.stats.all} solved problems`;
+    if (userData.currentCode) pill += ` + your code`;
+    if (userData.submissionResult) pill += ` + ${userData.submissionResult.verdict || 'result'}`;
+    contextPill.textContent = pill;
   }
 }
 
@@ -60,10 +60,10 @@ const contextInterval = setInterval(() => {
 
 // ─── BUILD SYSTEM PROMPT ───
 
-function buildSystemPrompt(userStats, currentProblem, currentCode) {
+function buildSystemPrompt(userStats, currentProblem, currentCode, submissionResult) {
   const stats = userStats?.stats || { all: 0, easy: 0, medium: 0, hard: 0 };
   const tags = userStats?.tags || [];
-  
+
   const topTags = tags.slice(0, 10).map(t => `${t.tagName} (${t.problemsSolved})`).join(', ');
   const solvedList = (userStats?.allSolved && userStats.allSolved.length > 0)
     ? userStats.allSolved.join(', ')
@@ -77,16 +77,26 @@ function buildSystemPrompt(userStats, currentProblem, currentCode) {
     ? `\n\nCURRENT CODE:\n\`\`\`\n${currentCode}\n\`\`\``
     : '';
 
-  return `You are LCPath, a Socratic LeetCode coach. 
+  let resultContext = '';
+  if (submissionResult) {
+    resultContext = `\n\nSUBMISSION RESULT: ${submissionResult.verdict || 'Unknown'}`;
+    if (submissionResult.errorMsg) resultContext += `\nError: ${submissionResult.errorMsg}`;
+    if (submissionResult.lastInput)    resultContext += `\nTest Input: ${submissionResult.lastInput}`;
+    if (submissionResult.lastOutput)   resultContext += `\nGot Output: ${submissionResult.lastOutput}`;
+    if (submissionResult.lastExpected) resultContext += `\nExpected:   ${submissionResult.lastExpected}`;
+  }
+
+  return `You are LCPath, a Socratic LeetCode coach.
 Context: User has solved ${stats.all} problems. Top topics: ${topTags}.
-${current}${codeContext}
+${current}${codeContext}${resultContext}
 
 GOAL: Guide the user to solve the problem themselves.
 RULES:
 1. NEVER provide full code or direct solutions unless explicitly forced.
 2. Use the Socratic method: ask questions, point out edge cases, or give tiny logic nudges.
 3. If their code has a bug, describe the logical flaw or an input that breaks it.
-4. Be concise, technical, and encouraging.`;
+4. If there is a SUBMISSION RESULT, proactively reference the specific error, input, and diff.
+5. Be concise, technical, and encouraging.`;
 }
 
 
@@ -110,7 +120,8 @@ async function sendMessage() {
     const systemPrompt = buildSystemPrompt(
       userData?.userStats,
       userData?.currentProblem,
-      userData?.currentCode
+      userData?.currentCode,
+      userData?.submissionResult
     );
 
     const res = await fetch('https://lc-path.onrender.com/api/chat', {

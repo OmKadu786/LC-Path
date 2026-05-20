@@ -104,33 +104,112 @@ function getCurrentProblemData() {
 
 // ─── 3. READ CODE FROM THE EDITOR ───
 
+// Content scripts run in an isolated world — window.monaco is inaccessible directly.
+// We inject a tiny <script> into the actual page context, read the code into a
+// hidden <meta> tag, then retrieve it from the content script.
 function getCurrentCode() {
-  // Best: use Monaco editor's internal model (gets ALL lines, not just visible ones)
-  try {
-    const monacoEditors = window.monaco?.editor?.getEditors?.();
-    if (monacoEditors && monacoEditors.length > 0) {
-      const code = monacoEditors[0].getModel()?.getValue();
-      if (code && code.trim().length > 0) return code;
-    }
-  } catch (e) { /* monaco not ready */ }
+  return new Promise((resolve) => {
+    // Remove any stale bridge element
+    const old = document.getElementById('__lcpath_code_bridge');
+    if (old) old.remove();
 
-  // Fallback: read from the hidden textarea that Monaco keeps in sync
-  try {
-    const textarea = document.querySelector('.monaco-editor textarea');
-    if (textarea && textarea.value && textarea.value.trim().length > 0) {
-      return textarea.value;
-    }
-  } catch (e) { /* skip */ }
+    // Inject a script that runs in PAGE context (has access to window.monaco)
+    const script = document.createElement('script');
+    script.textContent = `
+      (function() {
+        try {
+          let code = null;
+          // Try Monaco API
+          const editors = window.monaco?.editor?.getEditors?.() ||
+                          window.monaco?.editor?.getModels?.()?.map(m => ({ getModel: () => m })) || [];
+          if (editors.length > 0) {
+            code = editors[0].getModel?.()?.getValue?.();
+          }
+          // Fallback to any model
+          if (!code) {
+            const models = window.monaco?.editor?.getModels?.() || [];
+            for (const m of models) {
+              const v = m.getValue?.();
+              if (v && v.trim().length > 0) { code = v; break; }
+            }
+          }
+          if (code) {
+            let el = document.getElementById('__lcpath_code_bridge');
+            if (!el) { el = document.createElement('meta'); el.id = '__lcpath_code_bridge'; document.head.appendChild(el); }
+            el.setAttribute('data-code', encodeURIComponent(code));
+          }
+        } catch(e) {}
+      })();
+    `;
+    document.head.appendChild(script);
+    script.remove();
 
-  // Last resort: scrape visible DOM lines (incomplete for large files)
-  const viewLines = document.querySelectorAll('.view-lines .view-line');
-  if (viewLines.length > 0) {
-    return [...viewLines].map(line => line.textContent).join('\n');
-  }
+    // Give page script a tick to run
+    setTimeout(() => {
+      const bridge = document.getElementById('__lcpath_code_bridge');
+      if (bridge) {
+        const encoded = bridge.getAttribute('data-code');
+        bridge.remove();
+        if (encoded) return resolve(decodeURIComponent(encoded));
+      }
 
-  return null;
+      // Fallbacks if injection didn't work
+      const textarea = document.querySelector('.monaco-editor textarea');
+      if (textarea && textarea.value && textarea.value.trim().length > 0) {
+        return resolve(textarea.value);
+      }
+      const viewLines = document.querySelectorAll('.view-lines .view-line');
+      if (viewLines.length > 0) {
+        return resolve([...viewLines].map(l => l.textContent).join('\n'));
+      }
+      resolve(null);
+    }, 200);
+  });
 }
 
+// ─── 4. READ SUBMISSION RESULT (errors, test cases, diffs) ───
+
+function getSubmissionResult() {
+  try {
+    // Result verdict (Accepted, Wrong Answer, Runtime Error, etc.)
+    const verdictEl = document.querySelector('[data-e2e-locator="submission-result"], .text-red-s, .text-green-s, [class*="result-state"]');
+    const verdict = verdictEl?.textContent?.trim() || null;
+
+    // Runtime error message
+    const errorMsgEl = document.querySelector('[class*="error-message"], .font-mono.text-xs, [class*="runtime-error"]');
+    const errorMsg = errorMsgEl?.textContent?.trim() || null;
+
+    // Test case details
+    const getText = (label) => {
+      const els = [...document.querySelectorAll('div, span, p')];
+      const labelEl = els.find(e => e.textContent.trim() === label && e.children.length === 0);
+      return labelEl?.parentElement?.querySelector('pre, code, .font-mono')?.textContent?.trim() || null;
+    };
+
+    // Try to get input/output/expected from result panel
+    const allPres = [...document.querySelectorAll('.test-case-area pre, [class*="testcase"] pre, .font-menlo')];
+    const inputEl   = document.querySelector('[data-e2e-locator="console-stdin"]');
+    const outputEl  = document.querySelector('[data-e2e-locator="console-stdout"]');
+    
+    // Generic scrape of Last Executed Input / Output / Expected
+    const panels = [...document.querySelectorAll('[class*="result"] [class*="panel"], .result-container')];
+    
+    let lastInput = null, lastOutput = null, lastExpected = null;
+    document.querySelectorAll('div').forEach(div => {
+      const text = div.textContent.trim();
+      const next = div.nextElementSibling;
+      if (text === 'Last Executed Input' && next) lastInput  = next.textContent.trim();
+      if (text === 'Output'              && next) lastOutput = next.textContent.trim();
+      if (text === 'Expected Output'     && next) lastExpected = next.textContent.trim();
+    });
+
+    if (!verdict && !errorMsg && !lastInput) return null;
+
+    return { verdict, errorMsg, lastInput, lastOutput, lastExpected };
+  } catch (e) {
+    return null;
+  }
+}
 
 
 // ─── 4. FETCH FULL USER STATS VIA LEETCODE GRAPHQL API ───
@@ -267,12 +346,13 @@ async function main() {
   }
 
   const currentProblem = getCurrentProblemData();
-  const currentCode = getCurrentCode();
+  const currentCode = await getCurrentCode();
+  const submissionResult = getSubmissionResult();
 
   // Send to panel
   chrome.runtime.sendMessage({
     type: 'LCPATH_DATA',
-    payload: { userStats, currentProblem, currentCode, username }
+    payload: { userStats, currentProblem, currentCode, submissionResult, username }
   });
 }
 
@@ -299,18 +379,34 @@ const observer = new MutationObserver(() => {
       });
     }
 
-    setTimeout(() => {
+    setTimeout(async () => {
       injectButton();
-      // Re-scrape current problem data and code
       const currentProblem = getCurrentProblemData();
-      const currentCode = getCurrentCode();
+      const currentCode = await getCurrentCode();
+      const submissionResult = getSubmissionResult();
       chrome.runtime.sendMessage({
         type: 'LCPATH_DATA',
-        payload: { currentProblem, currentCode }
+        payload: { currentProblem, currentCode, submissionResult }
       });
     }, 2000);
   }
 });
+// Also watch for submission result panel appearing WITHOUT url change
+let resultObserverDebounce = null;
+const resultObserver = new MutationObserver(() => {
+  clearTimeout(resultObserverDebounce);
+  resultObserverDebounce = setTimeout(async () => {
+    const result = getSubmissionResult();
+    if (result) {
+      const currentCode = await getCurrentCode();
+      chrome.runtime.sendMessage({
+        type: 'LCPATH_DATA',
+        payload: { submissionResult: result, currentCode }
+      });
+    }
+  }, 1000);
+});
+resultObserver.observe(document.body, { childList: true, subtree: true });
 observer.observe(document.body, { childList: true, subtree: true });
 
 // Listen for manual refetch from panel
