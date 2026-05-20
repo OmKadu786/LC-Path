@@ -239,7 +239,7 @@ Their strongest topics are: ${topTags}.
 They have solved the following problems: ${solvedList}.
 They are currently looking at: ${currentProblem?.title || 'unknown'} (${currentProblem?.tags?.join(', ') || 'no tags'}).
 
-Return a JSON object with exactly 9 problem recommendations and 2 topic recommendations (no markdown fences, just the JSON object):
+Return a JSON object with exactly 20 problem recommendations and 4 topic recommendations (no markdown fences, just the JSON object):
 {
   "problems": [
     {
@@ -258,7 +258,7 @@ Return a JSON object with exactly 9 problem recommendations and 2 topic recommen
     }
   ]
 }
-Focus on filling their weakest topic gaps while building on what they know. ${easyRequirement}`;
+Focus on filling their weakest topic gaps while building on what they know. Do NOT recommend any problem they have already solved. ${easyRequirement}`;
 
   const res = await fetch('https://lc-path.onrender.com/api/chat', {
     method: 'POST',
@@ -297,8 +297,8 @@ Focus on filling their weakest topic gaps while building on what they know. ${ea
   }
 }
 
-function renderRecommendations(recs, solvedList = []) {
-  const allProblems = Array.isArray(recs) ? recs : (recs.problems || []);
+function renderRecommendations(recs, solvedList = [], isMerge = false) {
+  const incomingProblems = Array.isArray(recs) ? recs : (recs.problems || []);
 
   // Normalise solved titles for fast lookup (lowercase, strip punctuation)
   const solvedSet = new Set(
@@ -306,25 +306,36 @@ function renderRecommendations(recs, solvedList = []) {
   );
 
   // Filter out problems the user has already solved
-  currentRecs = allProblems.filter(r => {
+  const filtered = incomingProblems.filter(r => {
     const titleKey = (r.title || '').toLowerCase().replace(/[^a-z0-9]/g, '');
     const slugKey  = (r.slug  || '').toLowerCase().replace(/[^a-z0-9]/g, '');
     return !solvedSet.has(titleKey) && !solvedSet.has(slugKey);
   });
 
-  currentTopics = Array.isArray(recs) ? [] : (recs.topics || []);
-  currentRecIndex = 0;
-  currentTopicIndex = 0;
+  if (isMerge) {
+    // Merge new recs into existing pool, avoid duplicates
+    const existingSlugs = new Set(currentRecs.map(r => r.slug));
+    const newRecs = filtered.filter(r => !existingSlugs.has(r.slug));
+    currentRecs = [...currentRecs, ...newRecs];
+  } else {
+    currentRecs = filtered;
+    currentRecIndex = 0;
+  }
+
+  if (!isMerge) {
+    currentTopics = Array.isArray(recs) ? [] : (recs.topics || []);
+    currentTopicIndex = 0;
+    if (currentTopics.length > 2) {
+      document.getElementById('reload-topics-btn').style.display = 'block';
+    }
+  }
 
   if (currentRecs.length > 3) {
     document.getElementById('reload-recs-btn').style.display = 'block';
   }
-  if (currentTopics.length > 2) {
-    document.getElementById('reload-topics-btn').style.display = 'block';
-  }
 
   renderRecommendationsState();
-  renderTopicsState();
+  if (!isMerge) renderTopicsState();
 }
 
 function renderRecommendationsState() {
@@ -420,9 +431,30 @@ async function renderHome(data) {
   renderStats(userStats.stats);
   renderTopicBars(userStats.tags);
 
+  // If we already have a pool and the user just solved a problem,
+  // only re-filter the existing pool instead of triggering a full AI refetch.
+  const solvedList = userStats.allSolved || [];
+  if (currentRecs.length > 0) {
+    const solvedSet = new Set(solvedList.map(t => t.toLowerCase().replace(/[^a-z0-9]/g, '')));
+    currentRecs = currentRecs.filter(r => {
+      const titleKey = (r.title || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      const slugKey  = (r.slug  || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      return !solvedSet.has(titleKey) && !solvedSet.has(slugKey);
+    });
+    renderRecommendationsState();
+
+    // If pool is running low (< 4 left), silently fetch 20 more and merge them in
+    if (currentRecs.length < 4) {
+      fetchRecommendations(userStats, currentProblem)
+        .then(recs => renderRecommendations(recs, solvedList, true))
+        .catch(() => {});
+    }
+    return;
+  }
+
   try {
     const recs = await fetchRecommendations(userStats, currentProblem);
-    renderRecommendations(recs, userStats.allSolved || []);
+    renderRecommendations(recs, solvedList);
   } catch (e) {
     console.error('LCPath: recommendation fetch failed', e);
     const errorHtml = `<div class="error">Could not load recommendations.<br/><span style="font-size:10px; opacity:0.8">${e.message || e.toString()}</span></div>`;
