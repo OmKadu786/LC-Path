@@ -402,20 +402,39 @@ const observer = new MutationObserver(() => {
     }, 2000);
   }
 });
-// Also watch for submission result panel appearing WITHOUT url change
+// Watch for submission result panel appearing WITHOUT url change
+// Guard against infinite loop: getCurrentCode() injects a <script> tag which triggers this observer.
 let resultObserverDebounce = null;
-const resultObserver = new MutationObserver(() => {
+let isReadingCode = false;
+const resultObserver = new MutationObserver((mutations) => {
+  if (isReadingCode) return; // Ignore mutations caused by our own script injection
+
+  // Only fire if a new node was added that looks like a result panel (avoid firing on every keystroke)
+  const relevant = mutations.some(m =>
+    [...m.addedNodes].some(n => n.nodeType === 1 &&
+      (n.textContent?.includes('Wrong Answer') ||
+       n.textContent?.includes('Runtime Error') ||
+       n.textContent?.includes('Accepted') ||
+       n.textContent?.includes('Time Limit') ||
+       n.textContent?.includes('Memory Limit') ||
+       n.textContent?.includes('Compile Error'))
+    )
+  );
+  if (!relevant) return;
+
   clearTimeout(resultObserverDebounce);
   resultObserverDebounce = setTimeout(async () => {
     const result = getSubmissionResult();
     if (result) {
+      isReadingCode = true;
       const currentCode = await getCurrentCode();
+      isReadingCode = false;
       chrome.runtime.sendMessage({
         type: 'LCPATH_DATA',
         payload: { submissionResult: result, currentCode }
       });
     }
-  }, 1000);
+  }, 1200);
 });
 resultObserver.observe(document.body, { childList: true, subtree: true });
 observer.observe(document.body, { childList: true, subtree: true });
