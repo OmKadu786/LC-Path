@@ -104,56 +104,12 @@ function getCurrentProblemData() {
 
 // ─── 3. READ CODE FROM THE EDITOR ───
 
-// Content scripts run in an isolated world — window.monaco is inaccessible directly.
-// We inject a tiny <script> into the actual page context, read the code into a
-// hidden <meta> tag, then retrieve it from the content script.
+// code-reader.js runs in MAIN world and has access to window.monaco.
+// We communicate via custom DOM events to avoid CSP violations.
 function getCurrentCode() {
   return new Promise((resolve) => {
-    // Remove any stale bridge element
-    const old = document.getElementById('__lcpath_code_bridge');
-    if (old) old.remove();
-
-    // Inject a script that runs in PAGE context (has access to window.monaco)
-    const script = document.createElement('script');
-    script.textContent = `
-      (function() {
-        try {
-          let code = null;
-          // Try Monaco API
-          const editors = window.monaco?.editor?.getEditors?.() ||
-                          window.monaco?.editor?.getModels?.()?.map(m => ({ getModel: () => m })) || [];
-          if (editors.length > 0) {
-            code = editors[0].getModel?.()?.getValue?.();
-          }
-          // Fallback to any model
-          if (!code) {
-            const models = window.monaco?.editor?.getModels?.() || [];
-            for (const m of models) {
-              const v = m.getValue?.();
-              if (v && v.trim().length > 0) { code = v; break; }
-            }
-          }
-          if (code) {
-            let el = document.getElementById('__lcpath_code_bridge');
-            if (!el) { el = document.createElement('meta'); el.id = '__lcpath_code_bridge'; document.head.appendChild(el); }
-            el.setAttribute('data-code', encodeURIComponent(code));
-          }
-        } catch(e) {}
-      })();
-    `;
-    document.head.appendChild(script);
-    script.remove();
-
-    // Give page script a tick to run
-    setTimeout(() => {
-      const bridge = document.getElementById('__lcpath_code_bridge');
-      if (bridge) {
-        const encoded = bridge.getAttribute('data-code');
-        bridge.remove();
-        if (encoded) return resolve(decodeURIComponent(encoded));
-      }
-
-      // Fallbacks if injection didn't work
+    const timeout = setTimeout(() => {
+      // CSP fallbacks if MAIN world script didn't respond
       const textarea = document.querySelector('.monaco-editor textarea');
       if (textarea && textarea.value && textarea.value.trim().length > 0) {
         return resolve(textarea.value);
@@ -163,9 +119,19 @@ function getCurrentCode() {
         return resolve([...viewLines].map(l => l.textContent).join('\n'));
       }
       resolve(null);
-    }, 200);
+    }, 500);
+
+    // Listen for response from MAIN world code-reader.js
+    window.addEventListener('lcpath-code-result', (e) => {
+      clearTimeout(timeout);
+      resolve(e.detail?.code || null);
+    }, { once: true });
+
+    // Ask code-reader.js (MAIN world) to read Monaco
+    window.dispatchEvent(new CustomEvent('lcpath-read-code'));
   });
 }
+
 
 // ─── 4. READ SUBMISSION RESULT (errors, test cases, diffs) ───
 

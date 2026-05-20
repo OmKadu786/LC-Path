@@ -269,7 +269,7 @@ Focus on filling their weakest topic gaps while building on what they know. Do N
     body: JSON.stringify({
       messages: [{ role: 'user', content: prompt }],
       temperature: 0.7,
-      max_tokens: 1500
+      max_tokens: 3000
     })
   });
 

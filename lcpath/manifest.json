@@ -16,12 +16,20 @@
     "https://api.deepseek.com/*"
   ],
 
-  "content_scripts": [{
-    "matches": ["https://leetcode.com/*"],
-    "js": ["content.js"],
-    "css": ["content-inject.css"],
-    "run_at": "document_idle"
-  }],
+  "content_scripts": [
+    {
+      "matches": ["https://leetcode.com/*"],
+      "js": ["content.js"],
+      "css": ["content-inject.css"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://leetcode.com/*"],
+      "js": ["code-reader.js"],
+      "run_at": "document_idle",
+      "world": "MAIN"
+    }
+  ],
 
   "side_panel": {
     "default_path": "panel.html"

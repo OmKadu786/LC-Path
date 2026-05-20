@@ -45,7 +45,7 @@ if (!DEEPSEEK_API_KEY) {
 }
 
 // ── Server-side constants (Issue #3 & AI/LLM) ──
-const MAX_TOKENS_CAP = 1500;
+const MAX_TOKENS_CAP = 3000;
 const TEMPERATURE_CAP = 1.0;
 const MAX_MESSAGES = 20;
 
