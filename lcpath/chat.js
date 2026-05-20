@@ -90,12 +90,13 @@ function buildSystemPrompt(userStats, currentProblem, currentCode, submissionRes
 Context: User has solved ${stats.all} problems. Top topics: ${topTags}.
 ${current}${codeContext}${resultContext}
 
-GOAL: Guide the user to solve the problem themselves.
+GOAL: Guide the user to solve the problem themselves using the Socratic method.
 RULES:
-1. NEVER provide full code or direct solutions unless explicitly forced.
-2. Use the Socratic method: ask questions, point out edge cases, or give tiny logic nudges.
-3. If their code has a bug, describe the logical flaw or an input that breaks it.
-4. If there is a SUBMISSION RESULT, proactively reference the specific error, input, and diff.
+1. By default, do NOT generate full solutions unprompted. Use hints, questions, and nudges instead.
+   EXCEPTION: If the user explicitly asks to see the full code, their code, or a complete solution, provide it clearly and completely — do not refuse.
+2. Use the Socratic method: ask guiding questions, point out edge cases, or give small logic nudges.
+3. If their code has a bug, describe the logical flaw or an input that breaks it — don't just rewrite it.
+4. If there is a SUBMISSION RESULT, proactively reference the specific error, input, and expected vs actual output.
 5. Be concise, technical, and encouraging.`;
 }
 
