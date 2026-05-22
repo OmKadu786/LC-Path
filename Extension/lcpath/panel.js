@@ -466,6 +466,15 @@ async function renderHome(data) {
               document.getElementById('reload-topics-btn').style.display = 'block';
             }
             renderTopicsState();
+
+            // Update cache with new topics
+            chrome.storage.local.set({
+              lcpath_recs_cache: {
+                solvedCount: totalSolved,
+                lastTopicsRefreshAt: lastTopicsRefreshAt,
+                recs: { problems: currentRecs, topics: currentTopics }
+              }
+            });
           }
         })
         .catch(() => {});
@@ -475,8 +484,27 @@ async function renderHome(data) {
   }
 
   try {
+    // Check if we have cached recommendations for this exact solved count
+    const cache = await chrome.storage.local.get(['lcpath_recs_cache']);
+    if (cache.lcpath_recs_cache && cache.lcpath_recs_cache.solvedCount === totalSolved) {
+      console.log('LCPath: Loaded recommendations from cache');
+      lastTopicsRefreshAt = cache.lcpath_recs_cache.lastTopicsRefreshAt || 0;
+      renderRecommendations(cache.lcpath_recs_cache.recs, solvedList);
+      return;
+    }
+
     const recs = await fetchRecommendations(userStats, currentProblem);
     lastTopicsRefreshAt = userStats.stats.all || 0;
+    
+    // Save to cache
+    await chrome.storage.local.set({
+      lcpath_recs_cache: {
+        solvedCount: totalSolved,
+        lastTopicsRefreshAt: lastTopicsRefreshAt,
+        recs: recs
+      }
+    });
+
     renderRecommendations(recs, solvedList);
   } catch (e) {
     console.error('LCPath: recommendation fetch failed', e);
