@@ -252,22 +252,20 @@ function highlightSyntax(code, lang) {
 
   const langKeywords = keywords[lang?.toLowerCase()] || keywords.python;
 
-  // Highlight comments
-  code = code.replace(/(\/\/.*$|#.*$)/gm, '<span class="hl-comment">$1</span>');
+  const commentPattern = `(\\/\\/.*$|#.*$)`;
+  const stringPattern = `(&quot;.*?&quot;|&#39;.*?&#39;|"(?:\\\\.|[^"\\\\])*"|'(?:\\\\.|[^'\\\\])*')`;
+  const numberPattern = `\\b(\\d+)\\b`;
+  const keywordPattern = `\\b(${langKeywords.join('|')})\\b`;
 
-  // Highlight strings
-  code = code.replace(/(&quot;.*?&quot;|&#39;.*?&#39;|".*?"|'.*?')/g, '<span class="hl-string">$1</span>');
+  const combinedRegex = new RegExp(`${commentPattern}|${stringPattern}|${numberPattern}|${keywordPattern}`, 'gm');
 
-  // Highlight numbers
-  code = code.replace(/\b(\d+)\b/g, '<span class="hl-number">$1</span>');
-
-  // Highlight keywords
-  langKeywords.forEach(kw => {
-    const regex = new RegExp(`\\b(${kw})\\b`, 'g');
-    code = code.replace(regex, '<span class="hl-keyword">$1</span>');
+  return code.replace(combinedRegex, (match, comment, string, number, keyword) => {
+    if (comment) return `<span class="hl-comment">${comment}</span>`;
+    if (string) return `<span class="hl-string">${string}</span>`;
+    if (number) return `<span class="hl-number">${number}</span>`;
+    if (keyword) return `<span class="hl-keyword">${keyword}</span>`;
+    return match;
   });
-
-  return code;
 }
 
 
