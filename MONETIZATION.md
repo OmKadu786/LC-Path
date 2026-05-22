@@ -34,18 +34,19 @@ Your Node.js backend just acts as a proxy to hide your API keys. It does no heav
 
 Your target demographic consists of **Computer Science students and job seekers**. This demographic is notoriously price-sensitive, but they are highly motivated to pass interviews. For context, *LeetCode Premium* costs $35/month.
 
-### The Dual-Pricing Model (Monthly + Lifetime)
-The absolute best strategy for a developer tool like LCPath is to offer **both** a monthly subscription and a lifetime deal side-by-side. This creates a psychological "anchor" that makes the lifetime deal look incredibly valuable, while still capturing users who only want to pay for a month before an upcoming interview.
+### The 4-Tier Pricing Model
+The absolute best strategy for a developer tool like LCPath is to offer short-term passes for interview seasons, alongside a lifetime deal.
 
-* **Tier 1: Monthly Subscription ($4.99 / Month)**
-  * Perfect for the user who has a FAANG interview in 3 weeks and just needs immediate, short-term coaching.
-  * It’s the price of a coffee. It sits perfectly below the psychological threshold of "an expensive subscription."
-  * With an $0.08 cost to serve them, you keep **98% gross margins**.
-
-* **Tier 2: Lifetime Deal ($29.99 One-Time Payment)**
-  * Students absolutely despise recurring subscriptions. A lifetime deal removes all purchase friction.
-  * When placed next to the $4.99/mo option, users will do the math: *"If I use this for 6 months, the lifetime deal pays for itself!"* This massively increases your conversion rate.
-  * Since a user usually only grinds LeetCode for 3 to 6 months before getting a job, their "lifetime" usage is naturally capped. They pay $30, cost you $0.50 in API fees over 6 months, and you make massive upfront cash to fund marketing.
+* **Free Tier:** 
+  * Beautiful UI, "Topic Strength" bars, stats overview, 5 AI chats per day, and a basic 'Do Next' pool.
+* **Tier 1: 1 Month ($4.99)**
+  * Perfect for the short-term grind. Includes Unlimited AI chat, full 20-problem pool, and priority AI servers.
+* **Tier 2: 3 Months ($9.99 - Most Popular)**
+  * The sweet spot for Interview Season. By pricing this just $5 more than 1 month, you nudge users to upgrade. Includes Strict Interview Mode and Advanced Mastery Matrix.
+* **Tier 3: 1 Year ($29.99)**
+  * For long-term mastery. Includes Mock Interview Bot access.
+* **Tier 4: Lifetime Deal ($49.99 One-Time Payment)**
+  * Students absolutely despise recurring subscriptions. A lifetime deal removes all purchase friction. They pay once, cost you ~$1 in API fees over their lifetime, and you make massive upfront cash.
 
 ---
 
@@ -56,14 +57,8 @@ A Chrome extension needs a friction-free onboarding. If you demand a credit card
 ### The Free Tier (Forever Free)
 Let users install the extension and get value without paying a dime. 
 * **What's included:** The beautiful UI, the "Topic Strength" bars, the stats overview, and the quick-links.
-* **What's restricted:** The AI features. The "Do Next" recommendations, "Learn Next" topics, and the AI Chat Coach. 
-* **Teaser:** Show the "Do Next" section, but blur out the problem names with a lock icon. Let them click a "Unlock AI Coaching" button.
-
-### The Trial
-Give them a taste of the AI magic so they realize how good it is.
-* Give every new user **15 Free AI Credits** (where 1 credit = 1 recommendation refresh or 1 chat message).
-* This costs you literally half a cent per user, but allows them to experience the "Start" button and Socratic chat.
-* Once the 15 credits run out, the AI features lock, and the upgrade modal appears.
+* **The Limit:** Users are strictly limited to **5 AI Chat Messages per day**.
+* Once the 5 messages run out, the chat box disables and displays an "Upgrade to Pro" banner containing a link to your Lemon Squeezy checkout.
 
 ### The "Bring Your Own Key" (BYOK) Model
 If you want to be incredibly developer-friendly, offer a tier where the user can open the settings and paste their own DeepSeek or OpenAI API key.
@@ -73,7 +68,6 @@ If you want to be incredibly developer-friendly, offer a tier where the user can
 ---
 
 ## 🚀 Summary Plan
-1. **Launch Price:** $29 lifetime deal for early adopters, later shift to $4.99/mo.
-2. **Free Tier:** Beautiful stats UI is free forever. AI is locked.
-3. **Trial:** 15 free AI interactions to hook them.
-4. **Backend:** Keep using DeepSeek to maintain your 98% profit margin.
+1. **Pricing:** $4.99/mo, $9.99/3mo, $29.99/1yr, $49.99/lifetime.
+2. **Free Tier:** Beautiful stats UI is free forever. AI is capped at 5 messages/day.
+3. **Backend:** Keep using DeepSeek to maintain your 98% profit margin.

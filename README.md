@@ -14,8 +14,10 @@ LCPath solves this by automatically scraping your solved problem list from your 
 ## Features
 - **Automated Context Gathering:** A content script runs on `leetcode.com` to safely scrape your solved problems and the current problem's tags.
 - **Topic Strength Analysis:** Computes your strongest and weakest topics (e.g., Arrays, Hash maps, Two pointers) based on your solved history.
-- **Smart "Do Next" Recommendations:** Generates exactly 3 tailored problem recommendations designed to fill your weakest topic gaps while building on what you already know. Includes an explanation of *why* the problem was chosen for you.
-- **AI Chat Assistant:** A free-form chat interface powered by the DeepSeek API. Ask for a weekly study plan, request algorithmic explanations, or get hints on your current problem—the AI always responds with your full LeetCode history as context.
+- **Smart "Do Next" Recommendations:** Generates exactly 20 tailored problem recommendations designed to fill your weakest topic gaps while building on what you already know.
+- **Learn Next:** Automatically tracks your progress and rotates your recommended study topics every 5 solved problems.
+- **AI Chat Assistant & Socratic Coach:** A free-form chat interface powered by the DeepSeek API. The AI acts as a Socratic coach, reading your live code and submission errors in real-time to give you subtle hints without spoiling the answer.
+- **Live Code Polling:** Your code editor state syncs silently in the background every 4 seconds, so the AI always knows exactly what you're working on.
 - **Privacy First:** Your data stays local. The solved list is cached in `chrome.storage`, and your DeepSeek API key is stored securely on your device.
 
 ## Architecture
@@ -26,12 +28,12 @@ LCPath solves this by automatically scraping your solved problem list from your 
 ## Installation
 1. Clone or download this repository.
 2. **Start the Backend:**
-   - Navigate to the `backend/` folder in your terminal.
+   - Navigate to the `Extension/backend/` folder in your terminal.
    - Run `npm install`.
-   - Copy `.env.example` to `.env` and add your DeepSeek API key inside it.
+   - Create a `.env` file and add your DeepSeek API key inside it (`DEEPSEEK_API_KEY=your_key`).
    - Run `npm start` to run the proxy server on `localhost:3000`.
 3. **Load the Extension:**
-   - Open your Chromium browser (Chrome, Brave, Edge) and navigate to `chrome://extensions` (or `brave://extensions`).
+   - Open your Chromium browser (Chrome, Brave, Edge) and navigate to `chrome://extensions`.
    - Enable **Developer mode** in the top-right corner.
-   - Click **Load unpacked** and select the `lcpath/` folder (the lowercase one).
-4. Go to any LeetCode page, click the new green LCPath button in the top navigation bar, and enter your LeetCode username to get started!
+   - Click **Load unpacked** and select the `Extension/lcpath/` folder.
+4. Go to any LeetCode problem page, click the LCPath icon in your browser toolbar to open the side panel, and start learning!
