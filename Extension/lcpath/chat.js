@@ -18,7 +18,7 @@ async function loadChatHistory() {
     chatMessages.innerHTML = '';
     chatHistory.forEach(msg => {
       if (msg.role !== 'system') {
-        addMessageToUI(msg.role, msg.content, false);
+        addMessageToUI(msg.role, msg.content, true);
       }
     });
   }
@@ -193,21 +193,24 @@ async function sendMessage() {
 // ─── FORMAT MESSAGE (parse code blocks like LLMs) ───
 
 function formatMessage(text) {
+  // First escape the entire text to prevent HTML injection and preserve HTML tags as text
+  const escapedText = escapeHtml(text);
+
   // Use a temporary map to store code blocks and avoid newline replacement inside them
   const codeBlocks = [];
   const codeBlockRegex = /```(\w+)?\n([\s\S]*?)```/g;
 
-  let formatted = text.replace(codeBlockRegex, (match, lang, code) => {
+  let formatted = escapedText.replace(codeBlockRegex, (match, lang, code) => {
     const id = `__CODE_BLOCK_${codeBlocks.length}__`;
     const language = lang || 'code';
-    const escapedCode = escapeHtml(code.trim());
+    const escapedCode = code.trim();
     codeBlocks.push({
       id,
       html: `
         <div class="chat-code-block">
           <div class="chat-code-header">
             <span>${language}</span>
-            <button class="copy-code-btn" onclick="copyCode(this)" title="Copy code">📋</button>
+            <button class="copy-code-btn" title="Copy code">📋</button>
           </div>
           <div class="chat-code-content">${highlightSyntax(escapedCode, language)}</div>
         </div>`
@@ -268,17 +271,56 @@ function highlightSyntax(code, lang) {
 }
 
 
-// ─── COPY CODE BUTTON ───
+// ─── COPY CODE BUTTON & EVENT DELEGATION (Manifest V3 Compliant) ───
 
-window.copyCode = function(btn) {
+function copyToClipboard(text) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    return navigator.clipboard.writeText(text);
+  }
+  // Fallback for older browsers or restricted environments
+  return new Promise((resolve, reject) => {
+    try {
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      textarea.style.position = 'fixed';
+      textarea.style.top = '0';
+      textarea.style.left = '0';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.focus();
+      textarea.select();
+      const successful = document.execCommand('copy');
+      document.body.removeChild(textarea);
+      if (successful) {
+        resolve();
+      } else {
+        reject(new Error('execCommand copy failed'));
+      }
+    } catch (err) {
+      reject(err);
+    }
+  });
+}
+
+chatMessages.addEventListener('click', (e) => {
+  const btn = e.target.closest('.copy-code-btn');
+  if (!btn) return;
+
   const codeBlock = btn.closest('.chat-code-block');
-  const code = codeBlock.querySelector('.chat-code-content').textContent;
-  navigator.clipboard.writeText(code).then(() => {
+  if (!codeBlock) return;
+
+  const codeContentEl = codeBlock.querySelector('.chat-code-content');
+  if (!codeContentEl) return;
+
+  const code = codeContentEl.textContent;
+  copyToClipboard(code).then(() => {
     const originalText = btn.textContent;
     btn.textContent = '✓';
     setTimeout(() => { btn.textContent = originalText; }, 1500);
+  }).catch(err => {
+    console.error('Failed to copy code:', err);
   });
-};
+});
 
 
 // ─── ADD MESSAGE TO CHAT ───
