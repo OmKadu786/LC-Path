@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LCPath - The AI LeetCode Study Planner</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        dark: '#121212',
+                        darker: '#0a0a0a',
+                        card: '#1e1e1e',
+                        emerald: {
+                            400: '#34d399',
+                            500: '#10b981',
+                            600: '#059669',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #0a0a0a; color: #f3f4f6; }
+        .glow { box-shadow: 0 0 25px rgba(16, 185, 129, 0.15); }
+        .glow-strong { box-shadow: 0 0 35px rgba(16, 185, 129, 0.3); }
+        .emerald-gradient { background: linear-gradient(135deg, #34d399, #059669); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    </style>
+</head>
+<body class="antialiased min-h-screen flex flex-col">
+
+    <!-- Navbar -->
+    <nav class="border-b border-gray-800 bg-dark/80 backdrop-blur-md fixed w-full top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="code-2" class="text-emerald-500 w-8 h-8"></i>
+                    <span class="text-2xl font-bold tracking-tight">LC<span class="text-emerald-500">Path</span></span>
+                </div>
+                <div class="hidden md:flex space-x-8 text-sm font-medium text-gray-300">
+                    <a href="#features" class="hover:text-white transition-colors">Features</a>
+                    <a href="#pricing" class="hover:text-white transition-colors">Pricing</a>
+                    <a href="#faq" class="hover:text-white transition-colors">FAQ</a>
+                </div>
+                <div>
+                    <a href="#" class="bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2 rounded-lg font-medium transition-all shadow-lg shadow-emerald-500/20">Add to Chrome</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero -->
+    <section class="pt-40 pb-20 px-4 text-center">
+        <div class="max-w-4xl mx-auto">
+            <h1 class="text-5xl md:text-7xl font-extrabold tracking-tight mb-6">
+                Stop grinding blindly.<br>Start studying <span class="emerald-gradient">efficiently.</span>
+            </h1>
+            <p class="text-lg md:text-xl text-gray-400 mb-10 max-w-2xl mx-auto leading-relaxed">
+                An AI-powered LeetCode extension that analyzes your solved problems, recommends exactly what you should solve next, and acts as a Socratic coach when you get stuck.
+            </p>
+            <div class="flex flex-col sm:flex-row justify-center gap-4">
+                <a href="#" class="bg-emerald-600 hover:bg-emerald-500 text-white px-8 py-4 rounded-xl font-bold text-lg transition-all glow hover:glow-strong flex items-center justify-center gap-2">
+                    <i data-lucide="chrome" class="w-5 h-5"></i> Install LCPath (Free)
+                </a>
+                <a href="#features" class="bg-gray-800 hover:bg-gray-700 text-white px-8 py-4 rounded-xl font-bold text-lg transition-all flex items-center justify-center gap-2 border border-gray-700">
+                    See how it works
+                </a>
+            </div>
+
+            <!-- Dashboard Mockup Placeholder -->
+            <div class="mt-20 relative mx-auto max-w-5xl rounded-2xl border border-gray-800 bg-card p-2 shadow-2xl overflow-hidden glow">
+                <div class="flex items-center gap-2 px-4 py-3 border-b border-gray-800 bg-darker/50 rounded-t-xl">
+                    <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                    <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                    <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                </div>
+                <div class="aspect-video bg-dark flex items-center justify-center relative">
+                    <div class="text-gray-500 flex flex-col items-center">
+                        <i data-lucide="image" class="w-16 h-16 mb-4 opacity-50"></i>
+                        <p class="font-medium text-lg opacity-50">Extension Screenshot Placeholder</p>
+                        <p class="text-sm opacity-40 mt-1">Replace this div with a real image of the extension UI.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features -->
+    <section id="features" class="py-24 bg-darker border-y border-gray-900">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-4xl font-bold mb-4">Engineered for Technical Mastery</h2>
+                <p class="text-gray-400 text-lg">Tools designed to build intuition, not just memorize solutions.</p>
+            </div>
+            
+            <div class="grid md:grid-cols-3 gap-8">
+                <!-- Feature 1 -->
+                <div class="bg-card p-8 rounded-2xl border border-gray-800 hover:border-gray-700 transition-colors">
+                    <div class="bg-emerald-500/10 w-14 h-14 rounded-xl flex items-center justify-center mb-6 border border-emerald-500/20">
+                        <i data-lucide="target" class="text-emerald-500 w-7 h-7"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">Smart "Do Next" Pool</h3>
+                    <p class="text-gray-400 leading-relaxed">Analyzes your submission history to generate 20 personalized problem recommendations tailored to fill your specific knowledge gaps in algorithmic concepts.</p>
+                </div>
+                <!-- Feature 2 -->
+                <div class="bg-card p-8 rounded-2xl border border-gray-800 hover:border-gray-700 transition-colors">
+                    <div class="bg-emerald-500/10 w-14 h-14 rounded-xl flex items-center justify-center mb-6 border border-emerald-500/20">
+                        <i data-lucide="brain-circuit" class="text-emerald-500 w-7 h-7"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">Socratic AI Coach</h3>
+                    <p class="text-gray-400 leading-relaxed">Never get the straight answer. The AI provides calculating, subtle hints designed to guide your thought process and help you discover the solution organically.</p>
+                </div>
+                <!-- Feature 3 -->
+                <div class="bg-card p-8 rounded-2xl border border-gray-800 hover:border-gray-700 transition-colors">
+                    <div class="bg-emerald-500/10 w-14 h-14 rounded-xl flex items-center justify-center mb-6 border border-emerald-500/20">
+                        <i data-lucide="bar-chart-3" class="text-emerald-500 w-7 h-7"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">Real-time Telemetry</h3>
+                    <p class="text-gray-400 leading-relaxed">Syncs flawlessly with your profile to track multidimensional progress across Arrays, DP, Graphs, and Trees. View your mastery matrix in a clean, dense dashboard.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing -->
+    <section id="pricing" class="py-24">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-4xl font-bold mb-4">Invest in Your Engineering Career</h2>
+                <p class="text-gray-400 text-lg">Transparent pricing. No grinding blockades.</p>
+            </div>
+
+            <!-- 5 Column Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-4 lg:gap-6 items-stretch max-w-7xl mx-auto">
+                
+                <!-- Free -->
+                <div class="bg-card p-6 rounded-2xl border border-gray-800 flex flex-col">
+                    <h3 class="text-gray-400 font-semibold mb-2">FREE</h3>
+                    <div class="text-3xl font-bold mb-1">$0<span class="text-lg text-gray-500 font-normal">/mo</span></div>
+                    <p class="text-sm text-gray-500 mb-6">For casual study</p>
+                    <ul class="space-y-3 mb-8 flex-grow text-sm">
+                        <li class="flex items-center gap-2"><i data-lucide="check" class="text-emerald-500 w-4 h-4"></i> 'Do Next' problem pool</li>
+                        <li class="flex items-center gap-2"><i data-lucide="check" class="text-emerald-500 w-4 h-4"></i> Basic stat tracking</li>
+                        <li class="flex items-center gap-2"><i data-lucide="check" class="text-emerald-500 w-4 h-4"></i> 5 AI hints / day</li>
+                    </ul>
+                    <button class="w-full py-2 rounded-lg bg-gray-800 text-white font-medium hover:bg-gray-700 transition">Current Plan</button>
+                </div>
+
+                <!-- 1 Month -->
+                <div class="bg-card p-6 rounded-2xl border border-gray-800 flex flex-col">
+                    <h3 class="text-gray-400 font-semibold mb-2">1 MONTH</h3>
+                    <div class="text-3xl font-bold mb-1">$4.99<span class="text-lg text-gray-500 font-normal">/mo</span></div>
+                    <p class="text-sm text-gray-500 mb-6">Short-term grind</p>
+                    <ul class="space-y-3 mb-8 flex-grow text-sm">
+                        <li class="flex items-center gap-2"><i data-lucide="zap" class="text-emerald-500 w-4 h-4"></i> Unlimited AI chat</li>
+                        <li class="flex items-center gap-2"><i data-lucide="zap" class="text-emerald-500 w-4 h-4"></i> Full 20-problem pool</li>
+                        <li class="flex items-center gap-2"><i data-lucide="zap" class="text-emerald-500 w-4 h-4"></i> Priority AI servers</li>
+                    </ul>
+                    <button class="w-full py-2 rounded-lg bg-gray-800 border border-gray-700 hover:bg-gray-700 transition font-medium">Select Plan</button>
+                </div>
+
+                <!-- 3 Months (Most Popular) -->
+                <div class="bg-darker p-6 rounded-2xl border-2 border-emerald-500 relative flex flex-col transform md:-translate-y-4 shadow-2xl glow">
+                    <div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-emerald-500 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">Most Popular</div>
+                    <h3 class="text-emerald-400 font-semibold mb-2">3 MONTHS</h3>
+                    <div class="text-3xl font-bold mb-1">$9.99<span class="text-lg text-gray-500 font-normal"> total</span></div>
+                    <p class="text-sm text-emerald-500/80 mb-6">Perfect for Interview Season</p>
+                    <ul class="space-y-3 mb-8 flex-grow text-sm font-medium">
+                        <li class="flex items-center gap-2"><i data-lucide="check" class="text-emerald-500 w-4 h-4"></i> Everything in 1 Month</li>
+                        <li class="flex items-center gap-2"><i data-lucide="check" class="text-emerald-500 w-4 h-4"></i> Strict Interview Mode</li>
+                        <li class="flex items-center gap-2"><i data-lucide="check" class="text-emerald-500 w-4 h-4"></i> Advanced Mastery Matrix</li>
+                    </ul>
+                    <button class="w-full py-3 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold transition shadow-lg shadow-emerald-500/25">Select Plan</button>
+                </div>
+
+                <!-- 1 Year -->
+                <div class="bg-card p-6 rounded-2xl border border-gray-800 flex flex-col">
+                    <h3 class="text-gray-400 font-semibold mb-2">1 YEAR</h3>
+                    <div class="text-3xl font-bold mb-1">$29.99<span class="text-lg text-gray-500 font-normal"> total</span></div>
+                    <p class="text-sm text-gray-500 mb-6">Long-term mastery</p>
+                    <ul class="space-y-3 mb-8 flex-grow text-sm">
+                        <li class="flex items-center gap-2"><i data-lucide="check" class="text-emerald-500 w-4 h-4"></i> Everything in 3 Months</li>
+                        <li class="flex items-center gap-2"><i data-lucide="check" class="text-emerald-500 w-4 h-4"></i> Annual discount</li>
+                        <li class="flex items-center gap-2"><i data-lucide="check" class="text-emerald-500 w-4 h-4"></i> Mock Interview Bot access</li>
+                    </ul>
+                    <button class="w-full py-2 rounded-lg bg-gray-800 border border-gray-700 hover:bg-gray-700 transition font-medium">Select Plan</button>
+                </div>
+
+                <!-- Lifetime -->
+                <div class="bg-card p-6 rounded-2xl border border-gray-800 flex flex-col">
+                    <h3 class="text-gray-400 font-semibold mb-2">LIFETIME</h3>
+                    <div class="text-3xl font-bold mb-1">$49.99<span class="text-lg text-gray-500 font-normal"> once</span></div>
+                    <p class="text-sm text-gray-500 mb-6">Own it forever</p>
+                    <ul class="space-y-3 mb-8 flex-grow text-sm">
+                        <li class="flex items-center gap-2"><i data-lucide="star" class="text-emerald-500 w-4 h-4"></i> Pay once, own forever</li>
+                        <li class="flex items-center gap-2"><i data-lucide="star" class="text-emerald-500 w-4 h-4"></i> All future updates</li>
+                        <li class="flex items-center gap-2"><i data-lucide="star" class="text-emerald-500 w-4 h-4"></i> VIP Support</li>
+                    </ul>
+                    <button class="w-full py-2 rounded-lg bg-gray-800 border border-gray-700 hover:bg-gray-700 transition font-medium">Select Plan</button>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="mt-auto py-8 border-t border-gray-900 bg-darker">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-gray-500">
+            <div class="flex items-center gap-2">
+                <i data-lucide="code-2" class="w-5 h-5"></i>
+                <span class="font-medium text-gray-400">LCPath</span>
+            </div>
+            <div>&copy; 2026 LCPath. Engineered for performance.</div>
+            <div class="flex gap-6">
+                <a href="#" class="hover:text-white transition">Privacy Policy</a>
+                <a href="#" class="hover:text-white transition">Terms of Service</a>
+                <a href="#" class="hover:text-white transition">Changelog</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+    </script>
+</body>
+</html>
