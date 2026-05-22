@@ -12,7 +12,7 @@ Your backend server (`server.js`) must be running 24/7 on a public URL to serve 
 2. **Deploy the Web Service:**
    * Click **New +** and select **Web Service**.
    * Choose your `LC-Path` repository.
-   * **Root Directory:** Set this to `backend` (this is critical because `server.js` and `package.json` are inside the `backend` folder).
+   * **Root Directory:** Set this to `Extension/backend` (this is critical because `server.js` and `package.json` are inside this folder).
    * **Build Command:** `npm install`
    * **Start Command:** `npm start`
 3. **Configure Environment Variables:**
@@ -26,7 +26,7 @@ Your backend server (`server.js`) must be running 24/7 on a public URL to serve 
 
 Now that your backend is in the cloud, you must update the extension code to point to it.
 
-1. Open `lcpath/panel.js`.
+1. Open `Extension/lcpath/panel.js`.
 2. Find the `fetch` call inside the `fetchRecommendations` function:
    ```javascript
    const res = await fetch('http://localhost:3000/api/chat', {
