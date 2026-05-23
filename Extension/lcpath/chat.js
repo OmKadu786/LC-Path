@@ -1,10 +1,10 @@
 // chat.js — Chat tab + DeepSeek API + Progressive Hints
 
 const chatMessages = document.getElementById('chat-messages');
-const chatInput    = document.getElementById('chat-input');
-const chatSend     = document.getElementById('chat-send');
-const hintBtn      = document.getElementById('hint-btn');
-const contextPill  = document.getElementById('context-pill');
+const chatInput = document.getElementById('chat-input');
+const chatSend = document.getElementById('chat-send');
+const hintBtn = document.getElementById('hint-btn');
+const contextPill = document.getElementById('context-pill');
 
 let chatHistory = []; // [{role, content}] — full conversation context
 let hintCount = 0;
@@ -104,8 +104,8 @@ function buildSystemPrompt(userStats, currentProblem, currentCode, submissionRes
   if (submissionResult) {
     resultContext = `\n\nSUBMISSION RESULT: ${submissionResult.verdict || 'Unknown'}`;
     if (submissionResult.errorMsg) resultContext += `\nError: ${submissionResult.errorMsg}`;
-    if (submissionResult.lastInput)    resultContext += `\nTest Input: ${submissionResult.lastInput}`;
-    if (submissionResult.lastOutput)   resultContext += `\nGot Output: ${submissionResult.lastOutput}`;
+    if (submissionResult.lastInput) resultContext += `\nTest Input: ${submissionResult.lastInput}`;
+    if (submissionResult.lastOutput) resultContext += `\nGot Output: ${submissionResult.lastOutput}`;
     if (submissionResult.lastExpected) resultContext += `\nExpected:   ${submissionResult.lastExpected}`;
   }
 
@@ -172,7 +172,7 @@ async function sendMessage() {
 
     const data = await res.json();
     if (!data.choices || !data.choices[0]) throw new Error('Invalid API response');
-    
+
     const reply = data.choices[0].message.content;
 
     thinkingEl.classList.remove('loading');
@@ -342,7 +342,7 @@ function updateHintButtonUI() {
   if (hintCount < 3) {
     hintBtn.textContent = `💡 Hint (${hintCount + 1}/3)`;
   } else if (hintCount === 3) {
-    hintBtn.textContent = '💻 Show Code';
+    hintBtn.textContent = '💻 Reveal Solution';
   } else {
     hintBtn.textContent = '✅ All hints revealed';
     hintBtn.disabled = true;
@@ -412,14 +412,14 @@ async function requestHint() {
 
     const data = await res.json();
     if (!data.choices || !data.choices[0]) throw new Error('Invalid API response');
-    
+
     const reply = data.choices[0].message.content;
 
     thinkingEl.classList.remove('loading');
     thinkingEl.innerHTML = formatMessage(reply);
-    
+
     // Also add to history so AI knows what hints were given
-    chatHistory.push({ role: 'assistant', content: `[Hint ${hintCount+1}] ${reply}` });
+    chatHistory.push({ role: 'assistant', content: `[Hint ${hintCount + 1}] ${reply}` });
     saveChatHistory();
 
   } catch (e) {
