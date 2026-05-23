@@ -18,7 +18,8 @@ async function loadChatHistory() {
     chatMessages.innerHTML = '';
     chatHistory.forEach(msg => {
       if (msg.role !== 'system') {
-        addMessageToUI(msg.role, msg.content, true);
+        const uiRole = msg.role === 'assistant' ? 'ai' : 'user';
+        addMessageToUI(uiRole, msg.content, true);
       }
     });
   }
