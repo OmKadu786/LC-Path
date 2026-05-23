@@ -358,7 +358,7 @@ async function requestHint() {
   const problemTitle = userData?.currentProblem?.title;
 
   if (!problemTitle) {
-    addMessage('ai', "I can't see which problem you're on. Navigate to a LeetCode problem page first!");
+    addMessageToUI('ai', "I can't see which problem you're on. Navigate to a LeetCode problem page first!");
     return;
   }
 
