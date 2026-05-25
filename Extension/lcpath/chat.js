@@ -9,6 +9,39 @@ const contextPill = document.getElementById('context-pill');
 let chatHistory = []; // [{role, content}] — full conversation context
 let hintCount = 0;
 
+// ─── USAGE TRACKING (FREE TIER LIMIT) ───
+async function checkFreeTierLimit() {
+  const data = await chrome.storage.local.get(['lcpath_usage', 'lcpath_is_pro']);
+  if (data.lcpath_is_pro) return true; // Pro users have no limit
+
+  const today = new Date().toDateString();
+  let usage = data.lcpath_usage || { date: today, count: 0 };
+  
+  if (usage.date !== today) {
+    usage = { date: today, count: 0 };
+  }
+
+  if (usage.count >= 5) {
+    return false;
+  }
+  return true;
+}
+
+async function incrementUsage() {
+  const data = await chrome.storage.local.get(['lcpath_usage', 'lcpath_is_pro']);
+  if (data.lcpath_is_pro) return;
+
+  const today = new Date().toDateString();
+  let usage = data.lcpath_usage || { date: today, count: 0 };
+  
+  if (usage.date !== today) {
+    usage = { date: today, count: 0 };
+  }
+  
+  usage.count += 1;
+  await chrome.storage.local.set({ lcpath_usage: usage });
+}
+
 // Load history from storage on init
 async function loadChatHistory() {
   const data = await chrome.storage.local.get(['lcpath_chat_history', 'lcpath_hint_count']);
@@ -129,6 +162,14 @@ RULES:
 async function sendMessage() {
   const text = chatInput.value.trim();
   if (!text) return;
+
+  const canSend = await checkFreeTierLimit();
+  if (!canSend) {
+    addMessageToUI('ai', "🔒 **Daily Limit Reached**\n\nYou've used all 5 of your free AI hints/messages for today! Come back tomorrow or upgrade to a Pro plan for unlimited coaching.");
+    chatInput.value = '';
+    return;
+  }
+
   chatInput.value = '';
 
   // Render user message
@@ -179,6 +220,7 @@ async function sendMessage() {
     thinkingEl.innerHTML = formatMessage(reply);
     chatHistory.push({ role: 'assistant', content: reply });
     saveChatHistory();
+    await incrementUsage();
 
   } catch (e) {
     thinkingEl.classList.remove('loading');
@@ -362,6 +404,12 @@ async function requestHint() {
     return;
   }
 
+  const canSend = await checkFreeTierLimit();
+  if (!canSend) {
+    addMessageToUI('ai', "🔒 **Daily Limit Reached**\n\nYou've used all 5 of your free AI hints/messages for today! Come back tomorrow or upgrade to a Pro plan for unlimited coaching.");
+    return;
+  }
+
   const hintLevels = [
     `Give a very subtle hint for the LeetCode problem "${problemTitle}". Just mention the general approach or data structure to think about. Do NOT give the solution. Be brief (2-3 sentences). If you know what's wrong with their approach, mention it vaguely.`,
     `Give a more detailed hint for the LeetCode problem "${problemTitle}". Explain the algorithm pattern to use and walk through the key insight. Do NOT write the full code, but you can describe the steps. Keep it to 3-4 sentences.`,
@@ -421,6 +469,7 @@ async function requestHint() {
     // Also add to history so AI knows what hints were given
     chatHistory.push({ role: 'assistant', content: `[Hint ${hintCount + 1}] ${reply}` });
     saveChatHistory();
+    await incrementUsage();
 
   } catch (e) {
     thinkingEl.classList.remove('loading');
