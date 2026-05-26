@@ -50,6 +50,7 @@ The project is split into three main components:
 ### Prerequisites
 * Node.js installed.
 * A DeepSeek API Key.
+* Python (optional, for running the landing page locally).
 
 ### Running the Backend
 1. Navigate to the backend folder: `cd Extension/backend`
@@ -64,16 +65,25 @@ The project is split into three main components:
 4. Select the `Extension/lcpath/` directory.
 5. Go to LeetCode, and click the LCPath icon in the Chrome toolbar to open the side panel.
 
+### Running the Landing Page
+1. Navigate to the landing page folder: `cd LandingPage`
+2. Start a local server (e.g., using Python): `python -m http.server 8000`
+3. Open `http://localhost:8000/` in your browser.
+
 ---
 
 ## 5. Monetization & Licensing
 *See `MONETIZATION.md` for deep strategic details.*
 
-LCPath uses a Freemium model powered by **Lemon Squeezy**:
-* **Free Tier:** 5 AI hints per day.
-* **Pro Tier:** Unlimited chats, unlocked via a License Key.
+LCPath uses a tier-based pricing model powered by **Lemon Squeezy**:
+* **Free Tier:** $0 - Includes the 'Do Next' problem pool, basic stat tracking, and 5 AI hints/day.
+* **1 Month Tier:** $4.99/mo - Unlimited AI chat, full 20-problem pool, and priority AI servers.
+* **3 Months Tier:** $9.99 total - Adds strict interview mode and advanced mastery matrix.
+* **1 Year Tier:** $29.99 total - Annual discount for long-term mastery.
+* **Lifetime Tier:** $49.99 once - Pay once, own forever, including all future updates and VIP support.
+
 * **Validation Flow (WIP):** 
-  1. User buys Pro on Lemon Squeezy.
+  1. User buys a plan on Lemon Squeezy.
   2. Lemon Squeezy generates a License Key.
   3. User enters the key in the extension.
   4. Extension sends the key to the Node.js backend.
