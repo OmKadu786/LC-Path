@@ -34,19 +34,19 @@ Your Node.js backend just acts as a proxy to hide your API keys. It does no heav
 
 Your target demographic consists of **Computer Science students and job seekers**. This demographic is notoriously price-sensitive, but they are highly motivated to pass interviews. For context, *LeetCode Premium* costs $35/month.
 
-### The 4-Tier Pricing Model
+### The 5-Tier Pricing Model
 The absolute best strategy for a developer tool like LCPath is to offer short-term passes for interview seasons, alongside a lifetime deal.
 
-* **Free Tier:** 
+* **Free Tier ($0):** 
   * Beautiful UI, "Topic Strength" bars, stats overview, 5 AI chats per day, and a basic 'Do Next' pool.
-* **Tier 1: 1 Month ($4.99)**
+* **1 Month Tier ($4.99/mo):**
   * Perfect for the short-term grind. Includes Unlimited AI chat, full 20-problem pool, and priority AI servers.
-* **Tier 2: 3 Months ($9.99 - Most Popular)**
+* **3 Months Tier ($9.99 total - Most Popular):**
   * The sweet spot for Interview Season. By pricing this just $5 more than 1 month, you nudge users to upgrade. Includes Strict Interview Mode and Advanced Mastery Matrix.
-* **Tier 3: 1 Year ($29.99)**
-  * For long-term mastery. Includes Mock Interview Bot access.
-* **Tier 4: Lifetime Deal ($49.99 One-Time Payment)**
-  * Students absolutely despise recurring subscriptions. A lifetime deal removes all purchase friction. They pay once, cost you ~$1 in API fees over their lifetime, and you make massive upfront cash.
+* **1 Year Tier ($29.99 total):**
+  * For long-term mastery. Annual discount for sustained learning.
+* **Lifetime Tier ($49.99 One-Time Payment):**
+  * Students absolutely despise recurring subscriptions. A lifetime deal removes all purchase friction. They pay once, own forever, including all future updates and VIP support.
 
 ---
 
@@ -68,6 +68,6 @@ If you want to be incredibly developer-friendly, offer a tier where the user can
 ---
 
 ## 🚀 Summary Plan
-1. **Pricing:** $4.99/mo, $9.99/3mo, $29.99/1yr, $49.99/lifetime.
+1. **Pricing:** Free, $4.99/mo, $9.99/3mo, $29.99/1yr, $49.99/lifetime.
 2. **Free Tier:** Beautiful stats UI is free forever. AI is capped at 5 messages/day.
 3. **Backend:** Keep using DeepSeek to maintain your 98% profit margin.
