@@ -11,8 +11,6 @@ let hintCount = 0;
 
 // ─── USAGE TRACKING (FREE TIER LIMIT) ───
 async function checkFreeTierLimit() {
-  return true; // TEMP: Bypass limit during testing phase
-  
   const data = await chrome.storage.local.get(['lcpath_usage', 'lcpath_is_pro']);
   if (data.lcpath_is_pro) return true; // Pro users have no limit
 
