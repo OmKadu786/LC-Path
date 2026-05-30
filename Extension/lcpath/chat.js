@@ -423,7 +423,10 @@ async function requestHint() {
   document.getElementById('tab-chat').classList.add('active');
 
   // Grab the latest code from the editor when switching to Chat
-  if (typeof requestFreshCode === 'function') requestFreshCode();
+  if (typeof requestFreshCode === 'function') {
+    requestFreshCode();
+    await new Promise(r => setTimeout(r, 400)); // brief wait for round-trip
+  }
 
   const currentCode = userData?.currentCode;
   const codeContext = currentCode
