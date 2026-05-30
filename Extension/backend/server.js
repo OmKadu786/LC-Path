@@ -26,6 +26,11 @@ app.use(cors({
 
 app.use(express.json({ limit: '10kb' })); // Limit body size
 
+// ── Health Check (To keep Render awake) ──
+app.get('/health', (req, res) => {
+  res.status(200).send('OK');
+});
+
 // ── Rate Limiting (Issue #2 & AI/LLM) ──
 const limiter = rateLimit({
   windowMs: 60 * 1000,  // 1 minute
