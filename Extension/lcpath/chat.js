@@ -113,6 +113,26 @@ if (document.getElementById('tab-chat')?.classList.contains('active')) {
   startCodePolling();
 }
 
+// ─── GUARANTEED FRESH CODE MATCHER ───
+async function awaitFreshCode() {
+  return new Promise(resolve => {
+    const handler = (msg) => {
+      if (msg.type === 'LCPATH_DATA' && msg.payload && msg.payload.currentCode !== undefined) {
+        chrome.runtime.onMessage.removeListener(handler);
+        resolve(msg.payload.currentCode);
+      }
+    };
+    chrome.runtime.onMessage.addListener(handler);
+    if (typeof requestFreshCode === 'function') requestFreshCode();
+    
+    // Timeout fallback after 1 second
+    setTimeout(() => {
+      chrome.runtime.onMessage.removeListener(handler);
+      resolve(userData?.currentCode); 
+    }, 1000);
+  });
+}
+
 
 // ─── BUILD SYSTEM PROMPT ───
 
@@ -182,10 +202,10 @@ async function sendMessage() {
   thinkingEl.classList.add('loading');
 
   // Snapshot the latest code right before building the prompt
-  // This ensures we have the current editor state even if polling hasn't fired yet
-  if (typeof requestFreshCode === 'function') {
-    requestFreshCode();
-    await new Promise(r => setTimeout(r, 400)); // brief wait for round-trip
+  const freshCode = await awaitFreshCode();
+  if (freshCode) {
+    if (!userData) userData = {};
+    userData.currentCode = freshCode;
   }
 
   try {
@@ -423,9 +443,10 @@ async function requestHint() {
   document.getElementById('tab-chat').classList.add('active');
 
   // Grab the latest code from the editor when switching to Chat
-  if (typeof requestFreshCode === 'function') {
-    requestFreshCode();
-    await new Promise(r => setTimeout(r, 400)); // brief wait for round-trip
+  const freshCode = await awaitFreshCode();
+  if (freshCode) {
+    if (!userData) userData = {};
+    userData.currentCode = freshCode;
   }
 
   const currentCode = userData?.currentCode;
