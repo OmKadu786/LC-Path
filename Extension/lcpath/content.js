@@ -138,12 +138,40 @@ function getCurrentCode() {
 function getSubmissionResult() {
   try {
     // Result verdict (Accepted, Wrong Answer, Runtime Error, etc.)
-    const verdictEl = document.querySelector('[data-e2e-locator="submission-result"], .text-red-s, .text-green-s, [class*="result-state"]');
-    const verdict = verdictEl?.textContent?.trim() || null;
+    const verdictEls = [...document.querySelectorAll('[data-e2e-locator="submission-result"], .text-red-s, .text-green-s, [class*="result-state"], span, div')];
+    let verdict = null;
+    
+    // Look for explicit error verdicts first to avoid grabbing stale "Accepted" from testcase panel
+    for (const el of verdictEls) {
+      const t = el.textContent?.trim();
+      if ((t === 'Runtime Error' || t === 'Wrong Answer' || t === 'Time Limit Exceeded' || t === 'Compile Error') && el.children.length === 0) {
+        verdict = t;
+        break;
+      }
+    }
+    
+    // Fallback to first match
+    if (!verdict) {
+      const verdictEl = document.querySelector('[data-e2e-locator="submission-result"], .text-red-s, .text-green-s, [class*="result-state"]');
+      verdict = verdictEl?.textContent?.trim() || null;
+    }
 
     // Runtime error message
+    let errorMsg = null;
     const errorMsgEl = document.querySelector('[class*="error-message"], .font-mono.text-xs, [class*="runtime-error"]');
-    const errorMsg = errorMsgEl?.textContent?.trim() || null;
+    if (errorMsgEl) errorMsg = errorMsgEl.textContent?.trim();
+    
+    // Aggressive error message search if not found
+    if (!errorMsg && (verdict === 'Runtime Error' || verdict === 'Compile Error')) {
+      const pres = [...document.querySelectorAll('div, pre')];
+      for (const p of pres) {
+        const t = p.textContent?.trim() || '';
+        if ((t.includes('Line ') || t.includes('ERROR:')) && t.length > 10 && t.length < 2000 && p.children.length === 0) {
+          errorMsg = t;
+          break;
+        }
+      }
+    }
 
     // Test case details
     const getText = (label) => {
