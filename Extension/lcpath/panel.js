@@ -63,7 +63,7 @@ chrome.runtime.onMessage.addListener((msg) => {
 // Request a fresh code snapshot from the content script
 function requestFreshCode() {
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-    if (tabs[0]) chrome.tabs.sendMessage(tabs[0].id, { type: 'FETCH_CODE' });
+    if (tabs[0]) chrome.tabs.sendMessage(tabs[0].id, { type: 'FETCH_CODE' }).catch(() => {});
   });
 }
 
@@ -107,7 +107,7 @@ async function loadCachedData() {
       if (!userData) {
         // Auto-retry fetch
         chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-          if (tabs[0]) chrome.tabs.sendMessage(tabs[0].id, { type: 'REFETCH_DATA' });
+          if (tabs[0]) chrome.tabs.sendMessage(tabs[0].id, { type: 'REFETCH_DATA' }).catch(() => {});
         });
         renderHome(null);
       }
@@ -415,7 +415,7 @@ async function renderHome(data) {
         document.getElementById('retry-btn').addEventListener('click', () => {
           document.getElementById('retry-btn').textContent = 'Retrying...';
           chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-            if (tabs[0]) chrome.tabs.sendMessage(tabs[0].id, { type: 'REFETCH_DATA' });
+            if (tabs[0]) chrome.tabs.sendMessage(tabs[0].id, { type: 'REFETCH_DATA' }).catch(() => {});
           });
         });
         document.getElementById('topic-bars').innerHTML = '<div class="error">Failed to load topic stats.</div>';
