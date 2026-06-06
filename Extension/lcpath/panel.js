@@ -225,55 +225,68 @@ document.getElementById('reshuffle-topics-btn').addEventListener('click', () => 
   }
 });
 
-async function forceReloadAI() {
+async function forceReloadAI(type = 'both') {
   if (!userData || !userData.userStats) return;
-  const btn1 = document.getElementById('reload-recs-btn');
-  const btn2 = document.getElementById('reload-topics-btn');
-  const recContainer = document.getElementById('recommendations');
-  const topicContainer = document.getElementById('learn-next');
+  const isProblems = (type === 'problems');
+  const btnId = isProblems ? 'reload-recs-btn' : 'reload-topics-btn';
+  const containerId = isProblems ? 'recommendations' : 'learn-next';
+  
+  const btn = document.getElementById(btnId);
+  const container = document.getElementById(containerId);
   
   // Show visual loading state
-  btn1.classList.add('loading-spin');
-  btn2.classList.add('loading-spin');
-  btn1.style.pointerEvents = 'none';
-  btn2.style.pointerEvents = 'none';
+  btn.classList.add('loading-spin');
+  btn.style.pointerEvents = 'none';
   
-  const prevRecsHtml = recContainer.innerHTML;
-  const prevTopicsHtml = topicContainer.innerHTML;
+  const prevHtml = container.innerHTML;
   
-  recContainer.innerHTML = '<div class="loading">🧠 AI is analyzing your history...<br><span style="font-size:10px; opacity:0.7">This may take a few seconds</span></div>';
-  topicContainer.innerHTML = '<div class="loading">Generating fresh topics...</div>';
+  if (isProblems) {
+    container.innerHTML = '<div class="loading">🧠 AI is analyzing your history...<br><span style="font-size:10px; opacity:0.7">This may take a few seconds</span></div>';
+  } else {
+    container.innerHTML = '<div class="loading">Generating fresh topics...</div>';
+  }
   
   try {
-    const recs = await fetchRecommendations(userData.userStats, userData.currentProblem);
-    // Overwrite the pool with fresh data (or merge, but user wants completely new)
-    renderRecommendations(recs, userData.userStats.allSolved || [], false); // false = don't merge, overwrite
+    const recs = await fetchRecommendations(userData.userStats, userData.currentProblem, type);
+    
+    const cacheData = await chrome.storage.local.get('lcpath_recs_cache');
+    let mergedRecs = cacheData.lcpath_recs_cache?.recs || { problems: currentRecs, topics: currentTopics };
+    
+    if (isProblems) {
+      mergedRecs.problems = recs.problems || [];
+      renderRecommendations({ problems: mergedRecs.problems }, userData.userStats.allSolved || [], false);
+    } else {
+      mergedRecs.topics = recs.topics || [];
+      currentTopics = mergedRecs.topics;
+      currentTopicIndex = 0;
+      if (currentTopics.length > 2) {
+        document.getElementById('reshuffle-topics-btn').style.display = 'inline-block';
+      }
+      renderTopicsState();
+    }
     
     // Save to cache
     await chrome.storage.local.set({
       lcpath_recs_cache: {
         solvedCount: userData.userStats.stats.all || 0,
         lastTopicsRefreshAt: userData.userStats.stats.all || 0,
-        recs: recs
+        recs: mergedRecs
       }
     });
   } catch(e) {
     console.error('Failed to reload AI', e);
-    recContainer.innerHTML = prevRecsHtml;
-    topicContainer.innerHTML = prevTopicsHtml;
+    container.innerHTML = prevHtml;
     alert("Failed to reach AI. Please try again.");
   }
   
-  btn1.classList.remove('loading-spin');
-  btn2.classList.remove('loading-spin');
-  btn1.style.pointerEvents = 'auto';
-  btn2.style.pointerEvents = 'auto';
+  btn.classList.remove('loading-spin');
+  btn.style.pointerEvents = 'auto';
 }
 
-document.getElementById('reload-recs-btn').addEventListener('click', forceReloadAI);
-document.getElementById('reload-topics-btn').addEventListener('click', forceReloadAI);
+document.getElementById('reload-recs-btn').addEventListener('click', () => forceReloadAI('problems'));
+document.getElementById('reload-topics-btn').addEventListener('click', () => forceReloadAI('topics'));
 
-async function fetchRecommendations(userStats, currentProblem) {
+async function fetchRecommendations(userStats, currentProblem, type = 'both') {
   const topTags = userStats.tags.slice(0, 5).map(t => t.tagName).join(', ');
   const solvedList = (userStats.allSolved && userStats.allSolved.length > 0) 
     ? userStats.allSolved.join(', ')
@@ -287,12 +300,33 @@ async function fetchRecommendations(userStats, currentProblem) {
     difficultyDistribution = "Since the user has over 300 solved problems, make the difficulty of the 12 recommendations proportional to their experience, but you MUST include at least 1 'Hard' problem and several 'Medium' problems.";
   }
 
-  const prompt = `You are a LeetCode study coach. The user has solved ${userStats.stats.all} problems in their lifetime.
-Their strongest topics are: ${topTags}.
-They have solved the following problems: ${solvedList}.
-They are currently looking at: ${currentProblem?.title || 'unknown'} (${currentProblem?.tags?.join(', ') || 'no tags'}).
-
-Return a JSON object with exactly 12 problem recommendations and 4 topic recommendations (no markdown fences, just the JSON object):
+  let formatInstruction = "";
+  if (type === 'problems') {
+    formatInstruction = `Return a JSON object with exactly 12 problem recommendations (no topics). Example format:
+{
+  "problems": [
+    {
+      "id": 3,
+      "title": "Longest Substring Without Repeating Characters",
+      "slug": "longest-substring-without-repeating-characters",
+      "difficulty": "Easy|Medium|Hard",
+      "topic": "main topic tag",
+      "why": "one sentence reason based on their history"
+    }
+  ]
+}`;
+  } else if (type === 'topics') {
+    formatInstruction = `Return a JSON object with exactly 4 topic recommendations (no problems). Example format:
+{
+  "topics": [
+    {
+      "name": "Topic Name",
+      "why": "one sentence reason why they should focus on this"
+    }
+  ]
+}`;
+  } else {
+    formatInstruction = `Return a JSON object with exactly 12 problem recommendations and 4 topic recommendations. Example format:
 {
   "problems": [
     {
@@ -310,8 +344,17 @@ Return a JSON object with exactly 12 problem recommendations and 4 topic recomme
       "why": "one sentence reason why they should focus on this"
     }
   ]
-}
-Focus on filling their weakest topic gaps while building on what they know. Do NOT recommend any problem they have already solved. ${difficultyDistribution}`;
+}`;
+  }
+
+  const prompt = `You are a LeetCode study coach. The user has solved ${userStats.stats.all} problems in their lifetime.
+Their strongest topics are: ${topTags}.
+They have solved the following problems: ${solvedList}.
+They are currently looking at: ${currentProblem?.title || 'unknown'} (${currentProblem?.tags?.join(', ') || 'no tags'}).
+
+${formatInstruction}
+
+Focus on filling their weakest topic gaps while building on what they know. Do NOT recommend any problem they have already solved. ${type !== 'topics' ? difficultyDistribution : ''}`;
 
   const res = await fetch('https://lc-path.onrender.com/api/chat', {
     method: 'POST',
@@ -375,7 +418,7 @@ function renderRecommendations(recs, solvedList = [], isMerge = false) {
     currentRecIndex = 0;
   }
 
-  if (!isMerge) {
+  if (!isMerge && recs.topics !== undefined) {
     currentTopics = Array.isArray(recs) ? [] : (recs.topics || []);
     currentTopicIndex = 0;
     if (currentTopics.length > 2) {
@@ -392,7 +435,7 @@ function renderRecommendations(recs, solvedList = [], isMerge = false) {
   document.getElementById('reload-topics-btn').style.display = 'inline-block';
 
   renderRecommendationsState();
-  if (!isMerge) renderTopicsState();
+  if (!isMerge && recs.topics !== undefined) renderTopicsState();
 }
 
 function renderRecommendationsState() {
