@@ -32,7 +32,10 @@
       <section class="panel-section">
         <div class="sec-label" style="display: flex; justify-content: space-between; align-items: center;">
           <span>Do next</span>
-          <button id="reload-recs-btn" class="icon-btn" title="Cycle recommendations" style="display:none; font-size:12px;">↻</button>
+          <div>
+            <button id="reshuffle-recs-btn" class="icon-btn" title="Reshuffle recommendations" style="display:none; font-size:12px;">🔀</button>
+            <button id="reload-recs-btn" class="icon-btn" title="Generate new recommendations" style="display:none; font-size:12px; margin-left: 4px;">↻</button>
+          </div>
         </div>
         <div id="recommendations">
           <div class="loading">Analysing your history...</div>
@@ -42,7 +45,10 @@
       <section class="panel-section">
         <div class="sec-label" style="display: flex; justify-content: space-between; align-items: center;">
           <span>Learn next</span>
-          <button id="reload-topics-btn" class="icon-btn" title="Cycle topic suggestions" style="display:none; font-size:12px;">↻</button>
+          <div>
+            <button id="reshuffle-topics-btn" class="icon-btn" title="Reshuffle topics" style="display:none; font-size:12px;">🔀</button>
+            <button id="reload-topics-btn" class="icon-btn" title="Generate new topics" style="display:none; font-size:12px; margin-left: 4px;">↻</button>
+          </div>
         </div>
         <div id="learn-next">
           <div class="loading">Analysing topics...</div>

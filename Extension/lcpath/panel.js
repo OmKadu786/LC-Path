@@ -211,19 +211,55 @@ let currentRecIndex = 0;
 let currentTopicIndex = 0;
 let lastTopicsRefreshAt = 0; // solved count at last topic refresh
 
-document.getElementById('reload-recs-btn').addEventListener('click', () => {
+document.getElementById('reshuffle-recs-btn').addEventListener('click', () => {
   if (currentRecs.length > 0) {
     currentRecIndex = (currentRecIndex + 3) % currentRecs.length;
     renderRecommendationsState();
   }
 });
 
-document.getElementById('reload-topics-btn').addEventListener('click', () => {
+document.getElementById('reshuffle-topics-btn').addEventListener('click', () => {
   if (currentTopics.length > 0) {
     currentTopicIndex = (currentTopicIndex + 2) % currentTopics.length;
     renderTopicsState();
   }
 });
+
+async function forceReloadAI() {
+  if (!userData || !userData.userStats) return;
+  const btn1 = document.getElementById('reload-recs-btn');
+  const btn2 = document.getElementById('reload-topics-btn');
+  
+  btn1.style.opacity = '0.5';
+  btn2.style.opacity = '0.5';
+  btn1.style.pointerEvents = 'none';
+  btn2.style.pointerEvents = 'none';
+  
+  try {
+    const recs = await fetchRecommendations(userData.userStats, userData.currentProblem);
+    // Overwrite the pool with fresh data (or merge, but user wants completely new)
+    renderRecommendations(recs, userData.userStats.allSolved || [], false); // false = don't merge, overwrite
+    
+    // Save to cache
+    await chrome.storage.local.set({
+      lcpath_recs_cache: {
+        solvedCount: userData.userStats.stats.all || 0,
+        lastTopicsRefreshAt: userData.userStats.stats.all || 0,
+        recs: recs
+      }
+    });
+  } catch(e) {
+    console.error('Failed to reload AI', e);
+  }
+  
+  btn1.style.opacity = '1';
+  btn2.style.opacity = '1';
+  btn1.style.pointerEvents = 'auto';
+  btn2.style.pointerEvents = 'auto';
+}
+
+document.getElementById('reload-recs-btn').addEventListener('click', forceReloadAI);
+document.getElementById('reload-topics-btn').addEventListener('click', forceReloadAI);
 
 async function fetchRecommendations(userStats, currentProblem) {
   const topTags = userStats.tags.slice(0, 5).map(t => t.tagName).join(', ');
@@ -327,13 +363,17 @@ function renderRecommendations(recs, solvedList = [], isMerge = false) {
     currentTopics = Array.isArray(recs) ? [] : (recs.topics || []);
     currentTopicIndex = 0;
     if (currentTopics.length > 2) {
-      document.getElementById('reload-topics-btn').style.display = 'block';
+      document.getElementById('reshuffle-topics-btn').style.display = 'inline-block';
     }
   }
 
   if (currentRecs.length > 3) {
-    document.getElementById('reload-recs-btn').style.display = 'block';
+    document.getElementById('reshuffle-recs-btn').style.display = 'inline-block';
   }
+
+  // Always show the AI reload buttons if we successfully got any recs
+  document.getElementById('reload-recs-btn').style.display = 'inline-block';
+  document.getElementById('reload-topics-btn').style.display = 'inline-block';
 
   renderRecommendationsState();
   if (!isMerge) renderTopicsState();
@@ -463,7 +503,7 @@ async function renderHome(data) {
             currentTopicIndex = 0;
             lastTopicsRefreshAt = totalSolved;
             if (currentTopics.length > 2) {
-              document.getElementById('reload-topics-btn').style.display = 'block';
+              document.getElementById('reshuffle-topics-btn').style.display = 'inline-block';
             }
             renderTopicsState();
 
