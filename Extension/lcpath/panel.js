@@ -282,9 +282,9 @@ async function fetchRecommendations(userStats, currentProblem) {
   const solvedCount = userStats.stats.all || 0;
   let difficultyDistribution = "";
   if (solvedCount < 300) {
-    difficultyDistribution = "CRITICAL: Since the user has less than 300 solved problems, your 20 recommendations MUST follow this exact distribution: At least 10 'Easy' problems, exactly 1 or 2 'Hard' problems, and the rest 'Medium'.";
+    difficultyDistribution = "CRITICAL: Since the user has less than 300 solved problems, your 12 recommendations MUST follow this exact distribution: At least 6 'Easy' problems, exactly 1 'Hard' problem, and the rest 'Medium'.";
   } else {
-    difficultyDistribution = "Since the user has over 300 solved problems, make the difficulty of the 20 recommendations proportional to their experience, but you MUST include at least 2 'Hard' problems and several 'Medium' problems.";
+    difficultyDistribution = "Since the user has over 300 solved problems, make the difficulty of the 12 recommendations proportional to their experience, but you MUST include at least 1 'Hard' problem and several 'Medium' problems.";
   }
 
   const prompt = `You are a LeetCode study coach. The user has solved ${userStats.stats.all} problems in their lifetime.
@@ -292,7 +292,7 @@ Their strongest topics are: ${topTags}.
 They have solved the following problems: ${solvedList}.
 They are currently looking at: ${currentProblem?.title || 'unknown'} (${currentProblem?.tags?.join(', ') || 'no tags'}).
 
-Return a JSON object with exactly 20 problem recommendations and 4 topic recommendations (no markdown fences, just the JSON object):
+Return a JSON object with exactly 12 problem recommendations and 4 topic recommendations (no markdown fences, just the JSON object):
 {
   "problems": [
     {
