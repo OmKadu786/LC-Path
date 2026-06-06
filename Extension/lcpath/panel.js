@@ -229,11 +229,20 @@ async function forceReloadAI() {
   if (!userData || !userData.userStats) return;
   const btn1 = document.getElementById('reload-recs-btn');
   const btn2 = document.getElementById('reload-topics-btn');
+  const recContainer = document.getElementById('recommendations');
+  const topicContainer = document.getElementById('learn-next');
   
-  btn1.style.opacity = '0.5';
-  btn2.style.opacity = '0.5';
+  // Show visual loading state
+  btn1.classList.add('loading-spin');
+  btn2.classList.add('loading-spin');
   btn1.style.pointerEvents = 'none';
   btn2.style.pointerEvents = 'none';
+  
+  const prevRecsHtml = recContainer.innerHTML;
+  const prevTopicsHtml = topicContainer.innerHTML;
+  
+  recContainer.innerHTML = '<div class="loading">🧠 AI is analyzing your history...<br><span style="font-size:10px; opacity:0.7">This may take a few seconds</span></div>';
+  topicContainer.innerHTML = '<div class="loading">Generating fresh topics...</div>';
   
   try {
     const recs = await fetchRecommendations(userData.userStats, userData.currentProblem);
@@ -250,10 +259,13 @@ async function forceReloadAI() {
     });
   } catch(e) {
     console.error('Failed to reload AI', e);
+    recContainer.innerHTML = prevRecsHtml;
+    topicContainer.innerHTML = prevTopicsHtml;
+    alert("Failed to reach AI. Please try again.");
   }
   
-  btn1.style.opacity = '1';
-  btn2.style.opacity = '1';
+  btn1.classList.remove('loading-spin');
+  btn2.classList.remove('loading-spin');
   btn1.style.pointerEvents = 'auto';
   btn2.style.pointerEvents = 'auto';
 }

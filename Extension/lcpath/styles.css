@@ -394,6 +394,11 @@ body {
   to { transform: rotate(360deg); }
 }
 
+.loading-spin {
+  animation: spin 1s linear infinite !important;
+  opacity: 0.5;
+}
+
 .msg.loading {
   font-style: italic;
   color: var(--text-muted);
