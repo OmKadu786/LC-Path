@@ -279,9 +279,13 @@ async function fetchRecommendations(userStats, currentProblem) {
     ? userStats.allSolved.join(', ')
     : userStats.recent.slice(0, 15).join(', ');
     
-  const easyRequirement = (userStats.stats.all || 0) < 500 
-    ? "Include at least 1 'Easy' problem." 
-    : "";
+  const solvedCount = userStats.stats.all || 0;
+  let difficultyDistribution = "";
+  if (solvedCount < 300) {
+    difficultyDistribution = "CRITICAL: Since the user has less than 300 solved problems, your 20 recommendations MUST follow this exact distribution: At least 10 'Easy' problems, exactly 1 or 2 'Hard' problems, and the rest 'Medium'.";
+  } else {
+    difficultyDistribution = "Since the user has over 300 solved problems, make the difficulty of the 20 recommendations proportional to their experience, but you MUST include at least 2 'Hard' problems and several 'Medium' problems.";
+  }
 
   const prompt = `You are a LeetCode study coach. The user has solved ${userStats.stats.all} problems in their lifetime.
 Their strongest topics are: ${topTags}.
@@ -307,7 +311,7 @@ Return a JSON object with exactly 20 problem recommendations and 4 topic recomme
     }
   ]
 }
-Focus on filling their weakest topic gaps while building on what they know. Do NOT recommend any problem they have already solved. ${easyRequirement}`;
+Focus on filling their weakest topic gaps while building on what they know. Do NOT recommend any problem they have already solved. ${difficultyDistribution}`;
 
   const res = await fetch('https://lc-path.onrender.com/api/chat', {
     method: 'POST',
