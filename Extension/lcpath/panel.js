@@ -386,7 +386,32 @@ Focus on filling their weakest topic gaps while building on what they know. Do N
         text = text.substring(start, end + 1);
       }
     }
-    return JSON.parse(text);
+    const parsed = JSON.parse(text);
+    
+    // Fix AI hallucinations by verifying exact difficulty with LeetCode GraphQL
+    if (parsed.problems && parsed.problems.length > 0) {
+      try {
+        await Promise.all(parsed.problems.map(async (p) => {
+          if (!p.slug) return;
+          try {
+            const gqlRes = await fetch('https://leetcode.com/graphql', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                query: `query questionTitle($titleSlug: String!) { question(titleSlug: $titleSlug) { difficulty } }`,
+                variables: { titleSlug: p.slug }
+              })
+            });
+            const gqlData = await gqlRes.json();
+            if (gqlData?.data?.question?.difficulty) {
+              p.difficulty = gqlData.data.question.difficulty;
+            }
+          } catch (e) {} // Keep AI's guess if fetch fails
+        }));
+      } catch (e) {}
+    }
+    
+    return parsed;
   } catch (e) {
     console.error("Failed to parse recommendations JSON:", text);
     throw new Error("Failed to parse AI recommendations");
